@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Gallery</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --fg: #e8e8ea; --muted: #8a8a93; --bg: #0d0d10; --card: #16161c; --line: #2a2a33; --accent: #7af; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+    header { max-width: 980px; margin: 0 auto 40px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.5px; }
+    header p { color: var(--muted); margin-top: 10px; font-size: 14px; line-height: 1.6; max-width: 620px; }
+    .grid {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      display: block;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .card.live:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card.soon { opacity: 0.6; cursor: default; }
+    .card h2 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+    .card p { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .tag.live { background: rgba(119,170,255,0.15); color: var(--accent); }
+    .tag.soon { background: rgba(138,138,147,0.15); color: var(--muted); }
+    footer { max-width: 980px; margin: 48px auto 0; color: var(--muted); font-size: 12px; }
+    footer a { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Math Gallery</h1>
+    <p>Interactive visualizations of mathematical objects. Each piece renders in
+       your browser; some also ship an offline tool for high-resolution stills and
+       deep-zoom movies.</p>
+  </header>
+
+  <main class="grid">
+    <a class="card live" href="pages/mandelbrot/index.html">
+      <span class="tag live">Live</span>
+      <h2>Fractal Viewer</h2>
+      <p>Explore the Mandelbrot set and its relatives — Julia, Multibrot, Tricorn,
+         and Burning Ship — with deep multi-precision zoom, powered by a native
+         WebAssembly core.</p>
+    </a>
+
+    <div class="card soon">
+      <span class="tag soon">Coming soon</span>
+      <h2>Lorenz Attractor</h2>
+      <p>A real-time view of the Lorenz system — the canonical strange attractor
+         and a window into deterministic chaos.</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>Built with a shared C++ core compiled to WebAssembly. Source &amp; the
+       deep-zoom movie CLI live in this repository.</p>
+  </footer>
+</body>
+</html>

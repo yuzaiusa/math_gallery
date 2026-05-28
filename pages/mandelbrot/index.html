@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fractal Viewer — Math Gallery</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #ddd;
+      font-family: monospace;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 6px 12px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    #controls label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    #controls input[type=number], #controls input[type=text], #controls select {
+      width: 72px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #eee;
+      padding: 3px 6px;
+      font-family: monospace;
+      font-size: 13px;
+      border-radius: 3px;
+    }
+    #controls select { width: auto; }
+
+    #controls button {
+      background: #333;
+      border: 1px solid #555;
+      color: #eee;
+      padding: 4px 12px;
+      font-family: monospace;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    #controls button:hover { background: #444; }
+
+    #home-link { color: #7af; text-decoration: none; font-size: 13px; }
+    #home-link:hover { color: #fff; }
+
+    #status {
+      font-size: 12px;
+      color: #888;
+      flex: 1;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #progress-wrap {
+      width: 100%;
+      height: 3px;
+      background: #222;
+      flex-shrink: 0;
+      visibility: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0077ff, #ffff00);
+      transition: width 0.05s linear;
+    }
+
+    #canvas-container {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #canvas, #overlay {
+      position: absolute;
+      top: 0; left: 0;
+    }
+
+    #overlay {
+      cursor: crosshair;
+      z-index: 1;
+    }
+
+    #interesting-points {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid #444;
+      border-radius: 5px;
+      padding: 8px 12px;
+      z-index: 2;
+      pointer-events: all;
+      min-width: 200px;
+    }
+
+    #interesting-title {
+      font-size: 12px;
+      font-weight: bold;
+      color: #bbb;
+      padding-bottom: 4px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #interesting-title.open {
+      margin-bottom: 6px;
+      border-bottom: 1px solid #444;
+    }
+    #interesting-toggle-icon { font-style: normal; font-size: 10px; }
+    #interesting-list { display: none; }
+    #interesting-list.open {
+      display: block;
+      max-height: 255px;
+      overflow-y: auto;
+    }
+
+    .ipoint { font-size: 12px; color: #7af; cursor: pointer; padding: 2px 0; }
+    .ipoint:hover { color: #fff; text-decoration: underline; }
+    #ipoints-footnote { font-size: 10px; color: #888; margin-top: 6px; word-break: break-all; }
+    #ipoints-footnote a { color: #888; }
+
+    #nav-controls {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+    }
+
+    #dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 36px);
+      grid-template-rows: repeat(3, 36px);
+      gap: 3px;
+    }
+
+    #dpad button, #dpad-zoom button {
+      background: rgba(30, 30, 30, 0.75);
+      border: 1px solid #555;
+      color: #ddd;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    #dpad button:hover, #dpad-zoom button:hover { background: rgba(80, 80, 80, 0.9); }
+    #dpad button:active, #dpad-zoom button:active { background: rgba(120, 120, 120, 0.9); }
+
+    #dpad-zoom { display: flex; flex-direction: column; gap: 3px; }
+    #dpad-zoom button { width: 42px; height: 55px; font-size: 12px; }
+
+    #hint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.55);
+      color: #aaa;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <a id="home-link" href="../../index.html">&larr; Gallery</a>
+    <label>
+      Fractal
+      <select id="fractal">
+        <option value="0">Mandelbrot</option>
+        <option value="1">Julia</option>
+        <option value="2">Multibrot</option>
+        <option value="3">Tricorn</option>
+        <option value="4">Burning Ship</option>
+      </select>
+    </label>
+    <label id="degree-label" style="display:none">
+      Degree
+      <input type="number" id="degree" value="3" min="2" max="8" step="1">
+    </label>
+    <label id="julia-label" style="display:none">
+      Julia c
+      <input type="text" id="julia-re" value="-0.123" style="width:78px">
+      <input type="text" id="julia-im" value="0.745" style="width:78px">
+    </label>
+    <label>
+      Max Iterations
+      <input type="number" id="max-iter" value="4096" min="1" max="100000" step="64">
+    </label>
+    <label>
+      Color Cycles
+      <input type="number" id="color-cycles" value="1" min="0.1" max="50" step="0.1">
+    </label>
+    <button id="reset-btn">Reset</button>
+    <label>
+      Center Re
+      <input type="text" id="center-re" style="width:120px">
+    </label>
+    <label>
+      Center Im
+      <input type="text" id="center-im" style="width:120px">
+    </label>
+    <label>
+      Zoom
+      <input type="text" id="zoom-input" style="width:100px">
+    </label>
+    <button id="zoom-btn">Zoom</button>
+    <button id="zoom2x-btn">Zoom 2x</button>
+    <button id="zoom05x-btn">Zoom 0.5x</button>
+    <button id="save-btn">Save</button>
+    <span id="status"></span>
+  </div>
+
+  <div id="progress-wrap">
+    <div id="progress-bar"></div>
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="canvas"></canvas>
+    <canvas id="overlay"></canvas>
+    <div id="hint">Drag to zoom in</div>
+
+    <div id="nav-controls">
+      <div id="dpad">
+        <span></span>
+        <button id="pan-up">&#9650;</button>
+        <span></span>
+        <button id="pan-left">&#9664;</button>
+        <span></span>
+        <button id="pan-right">&#9654;</button>
+        <span></span>
+        <button id="pan-down">&#9660;</button>
+        <span></span>
+      </div>
+      <div id="dpad-zoom">
+        <button id="dpad-zoom2x-btn">+</button>
+        <button id="dpad-zoom05x-btn">&minus;</button>
+      </div>
+    </div>
+
+    <div id="interesting-points">
+      <div id="interesting-title"><i id="interesting-toggle-icon">&#9654;</i> Interesting Points to View</div>
+      <div id="interesting-list">
+<!-- POINTS:START (generated by cli/gen_points_html.py) -->
+      <div class="ipoint" data-fractal="0" data-re="-0.75" data-im="0" data-zoom="1" data-maxiter="4096" data-cycles="1">1. Mandelbrot (home)</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.755" data-im="0.10" data-zoom="8" data-maxiter="2048" data-cycles="2">2. Seahorse Valley</div>
+      <div class="ipoint" data-fractal="0" data-re="0.27" data-im="0.006" data-zoom="32" data-maxiter="2048" data-cycles="3">3. Elephant Valley</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.0865" data-im="0.6554" data-zoom="1024" data-maxiter="4096" data-cycles="3">4. Triple Spiral Valley</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.76" data-im="0" data-zoom="2" data-maxiter="4096" data-cycles="1">5. Mini-Mandelbrot Satellites</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.735745" data-im="1e-7" data-zoom="4096" data-maxiter="4096" data-cycles="5">6. Wormhole</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.75014018821" data-im="0.010248228956" data-zoom="6550800" data-maxiter="4096" data-cycles="1.6">7. Multi-lane</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.101095431093" data-im="-0.956257977003" data-zoom="78430400" data-maxiter="4096" data-cycles="3.5">8. Mini-Mandelbrot</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.027250" data-im="0.2546711" data-zoom="256" data-maxiter="4096" data-cycles="3">9. Flowers</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.2164565994" data-im="0.6533507375" data-zoom="227144" data-maxiter="4096" data-cycles="3.6">10. Radiation</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.233918" data-im="-0.09232582" data-zoom="900" data-maxiter="4096" data-cycles="4">11. A Local System</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.23354434" data-im="-0.0915974603" data-zoom="12766.7" data-maxiter="4096" data-cycles="2">12. Whirlpool</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.76383287666540" data-im="-0.092138054652920" data-zoom="3447320000" data-maxiter="4096" data-cycles="1.8">13. Another Whirlpool</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.735752046576760" data-im="4.106330277498480e-9" data-zoom="199325000000" data-maxiter="4096" data-cycles="3.9">14. Branches</div>
+      <div class="ipoint" data-fractal="0" data-re="0.37484393943" data-im="0.095904007898" data-zoom="2000000" data-maxiter="4096" data-cycles="4">15. A Different Type of Island</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.7405291" data-im="-0.1832163" data-zoom="684.064" data-maxiter="4096" data-cycles="3">16. 17-Arms</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.216457507236" data-im="0.653350796972" data-zoom="78720800" data-maxiter="4096" data-cycles="4">17. Bugs</div>
+      <div class="ipoint" data-fractal="0" data-re="0.262947910" data-im="0.00241686860" data-zoom="20480.0" data-maxiter="4096" data-cycles="3.2">18. Wormtail</div>
+      <div class="ipoint" data-fractal="0" data-re="0.250746403723" data-im="-0.0000299373311128" data-zoom="14000000" data-maxiter="4096" data-cycles="1.7">19. Nested Circle</div>
+      <div class="ipoint" data-fractal="0" data-re="0.256031023" data-im="-0.000754629204" data-zoom="52000.0" data-maxiter="4096" data-cycles="1.7">20. On the Edge of Two Worlds</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.5963575495815" data-im="0.6627492554587" data-zoom="107500000" data-maxiter="4096" data-cycles="3.2">21. Twisted World</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.750111271012227" data-im="-0.00916133417355220" data-zoom="28276000000" data-maxiter="4096" data-cycles="3.7">22. Twisted Border</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.6191859531" data-im="0.4047769777" data-zoom="1000000" data-maxiter="4096" data-cycles="3.7">23. A More Beautiful Whirlpool</div>
+      <div class="ipoint" data-fractal="0" data-re="0.250746362660" data-im="-0.0000299354145086" data-zoom="97000000" data-maxiter="4096" data-cycles="5.4">24. Bubble World</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.1542247793" data-im="1.037026601" data-zoom="600000" data-maxiter="4096" data-cycles="2.8">25. Ugly Landscape</div>
+      <div class="ipoint" data-fractal="0" data-re="0.2542099079452" data-im="-0.0004374588482307" data-zoom="180000000" data-maxiter="4096" data-cycles="3.5">26. Cross</div>
+      <div class="ipoint" data-fractal="0" data-re="0.2550869009" data-im="-0.4949785322" data-zoom="200000" data-maxiter="4096" data-cycles="2">27. Complicated Landscape</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.233906232" data-im="-0.09252157207" data-zoom="185710" data-maxiter="4096" data-cycles="0.9">28. Spiders</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.619186269516" data-im="0.404777545795" data-zoom="43771400" data-maxiter="4096" data-cycles="2">29. Vincent van Gogh</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.9505157460" data-im="-0.2451649858" data-zoom="128011" data-maxiter="4096" data-cycles="2.4">30. Pineapples</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.950515013685" data-im="-0.245165032881" data-zoom="93909500" data-maxiter="4096" data-cycles="2.2">31. Tentacles</div>
+      <div class="ipoint" data-fractal="0" data-re="0.274542747720" data-im="0.00757850625730" data-zoom="17682200" data-maxiter="4096" data-cycles="2.6">32. A strange land</div>
+      <div class="ipoint" data-fractal="0" data-re="0.274543945685" data-im="0.00757879727718" data-zoom="56484700" data-maxiter="4096" data-cycles="0.8">33. Dark elephants</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.14907018" data-im="0.65200680" data-zoom="1606.07" data-maxiter="4096" data-cycles="3">34. Swirl land 1</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.14889514172" data-im="0.65180386979" data-zoom="1139940" data-maxiter="4096" data-cycles="3.6">35. Swirl land 2</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.1487653440" data-im="0.6520155126" data-zoom="257092" data-maxiter="4096" data-cycles="3.7">36. Swirl land 3</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.1490550669" data-im="0.6520915848" data-zoom="111800" data-maxiter="4096" data-cycles="1.6">37. Swirl land 4</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.14904776786" data-im="0.65209237614" data-zoom="4114240" data-maxiter="4096" data-cycles="1.6">38. Swirl land 5</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.1489158931" data-im="0.6521578554" data-zoom="157294" data-maxiter="4096" data-cycles="2.9">39. Swirl land 6</div>
+      <div class="ipoint" data-fractal="0" data-re="0.302004390" data-im="0.438973578" data-zoom="11516.9" data-maxiter="4096" data-cycles="2.4">40. Inside a small side knob 1</div>
+      <div class="ipoint" data-fractal="0" data-re="0.3020598027" data-im="0.4389838420" data-zoom="275208" data-maxiter="4096" data-cycles="3.4">41. Inside a small side knob 2</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.768755877" data-im="0.001960582081" data-zoom="112657" data-maxiter="4096" data-cycles="2.7">42. Isn&#x27;t it like a candy?</div>
+      <div class="ipoint" data-fractal="0" data-re="-1.7687579787" data-im="0.0019605065587" data-zoom="1311960" data-maxiter="4096" data-cycles="4.3">43. Inside that candy</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.796246086" data-im="0.171176881" data-zoom="10167.0" data-maxiter="4096" data-cycles="3.4">44. Persian Carpet 1</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.7962895856" data-im="0.1711174695" data-zoom="813357" data-maxiter="4096" data-cycles="3.4">45. Persian Carpet 2</div>
+      <div class="ipoint" data-fractal="0" data-re="-0.743643887037151" data-im="0.13182590420533" data-zoom="500000000000" data-maxiter="8000" data-cycles="3">46. Deep dive (DD precision)</div>
+      <div class="ipoint" data-fractal="1" data-re="0" data-im="0" data-zoom="1" data-maxiter="2048" data-cycles="2" data-juliare="-0.123" data-juliaim="0.745">47. Julia: Douady Rabbit</div>
+      <div class="ipoint" data-fractal="1" data-re="0" data-im="0" data-zoom="1" data-maxiter="2048" data-cycles="2" data-juliare="-0.75" data-juliaim="0.0">48. Julia: San Marco</div>
+      <div class="ipoint" data-fractal="1" data-re="0" data-im="0" data-zoom="1" data-maxiter="2048" data-cycles="2.5" data-juliare="-0.390541" data-juliaim="-0.586788">49. Julia: Siegel Disk</div>
+      <div class="ipoint" data-fractal="2" data-re="0" data-im="0" data-zoom="1" data-maxiter="4096" data-cycles="1" data-degree="3">50. Multibrot (degree 3)</div>
+      <div class="ipoint" data-fractal="2" data-re="0" data-im="0" data-zoom="1" data-maxiter="4096" data-cycles="1" data-degree="5">51. Multibrot (degree 5)</div>
+      <div class="ipoint" data-fractal="3" data-re="-0.25" data-im="0" data-zoom="1" data-maxiter="4096" data-cycles="1">52. Tricorn (Mandelbar)</div>
+      <div class="ipoint" data-fractal="4" data-re="-0.5" data-im="-0.5" data-zoom="1" data-maxiter="4096" data-cycles="1">53. Burning Ship (home)</div>
+      <div class="ipoint" data-fractal="4" data-re="-1.7557" data-im="-0.0316" data-zoom="200" data-maxiter="4096" data-cycles="2">54. Burning Ship: the Armada</div>
+      <!-- POINTS:END -->
+      <div id="ipoints-footnote">Mandelbrot points; switch the Fractal selector to explore Julia, Multibrot, Tricorn, and Burning Ship.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

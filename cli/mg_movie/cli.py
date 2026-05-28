@@ -1,0 +1,159 @@
+"""Render a deep-zoom fractal dive to an MP4.
+
+Frames are computed by the native core (`mg_core`, GIL released) across a thread
+pool and piped as raw RGB to ffmpeg. The color mapping mirrors the browser
+viewer's colorMap (cube-root spread + cyclic HSL).
+"""
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
+
+import numpy as np
+
+try:
+    import mg_core
+except ImportError:
+    sys.exit("error: native module `mg_core` not found. Build/install it first "
+             "(`pip install .` from the repo root).")
+
+INITIAL_RE_WIDTH = 3.5  # matches the browser viewer's reset width
+
+FRACTALS = {
+    "mandelbrot":   mg_core.Fractal.MANDELBROT,
+    "julia":        mg_core.Fractal.JULIA,
+    "multibrot":    mg_core.Fractal.MULTIBROT,
+    "tricorn":      mg_core.Fractal.TRICORN,
+    "burning_ship": mg_core.Fractal.BURNING_SHIP,
+}
+PRECISIONS = {
+    "f64": mg_core.Precision.F64,
+    "dd":  mg_core.Precision.DD,
+    "qd":  mg_core.Precision.QD,
+}
+
+
+def viewport(cx, cy, zoom, w, h):
+    """Center+zoom -> (re_min, re_max, im_min, im_max), preserving aspect."""
+    re_w = INITIAL_RE_WIDTH / zoom
+    im_h = re_w * h / w
+    return (cx - re_w / 2, cx + re_w / 2, cy - im_h / 2, cy + im_h / 2)
+
+
+def zoom_schedule(z0, z1, frames):
+    """Geometric (constant-speed) interpolation between two zoom levels."""
+    if frames <= 1:
+        return [z0]
+    ratio = (z1 / z0) ** (1.0 / (frames - 1))
+    return [z0 * ratio ** i for i in range(frames)]
+
+
+def colorize(smooth, max_iter, cycles):
+    """Vectorized port of the viewer's colorMap. Returns uint8 (H, W, 3)."""
+    inset = smooth < 0
+    t = np.clip(smooth / (max_iter - 1), 0.0, 1.0)
+    t = np.cbrt(t)                       # spread the low-escape region
+    h6 = np.mod(t * cycles, 1.0) * 6.0
+    hi = np.floor(h6).astype(np.int32)
+    x = 1.0 - np.abs(np.mod(h6, 2.0) - 1.0)
+    one = np.ones_like(h6)
+    zero = np.zeros_like(h6)
+    conds = [hi == 0, hi == 1, hi == 2, hi == 3, hi == 4]  # else -> hi == 5
+    r = np.select(conds, [one, x, zero, zero, x], default=one)
+    g = np.select(conds, [x, one, one, x, zero], default=zero)
+    b = np.select(conds, [zero, zero, x, one, one], default=x)
+    rgb = np.stack([r, g, b], axis=-1)
+    rgb[inset] = 0.0
+    return np.clip(np.round(rgb * 255.0), 0, 255).astype(np.uint8)
+
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="mg-movie",
+        description="Render a deep-zoom fractal dive to an MP4 video.")
+    p.add_argument("-o", "--output", default="dive.mp4", help="output video path")
+    p.add_argument("--fractal", choices=FRACTALS, default="mandelbrot")
+    p.add_argument("--center-re", type=float, default=-0.743643887037151)
+    p.add_argument("--center-im", type=float, default=0.13182590420533)
+    p.add_argument("--zoom-start", type=float, default=1.0)
+    p.add_argument("--zoom-end", type=float, default=1e6)
+    p.add_argument("--frames", type=int, default=300)
+    p.add_argument("--fps", type=int, default=30)
+    p.add_argument("--width", type=int, default=1280)
+    p.add_argument("--height", type=int, default=720)
+    p.add_argument("--max-iter", type=int, default=4096)
+    p.add_argument("--cycles", type=float, default=2.0, help="color cycles")
+    p.add_argument("--escape-r2", type=float, default=4.0)
+    p.add_argument("--precision", choices=PRECISIONS, default=None,
+                   help="force a precision tier (default: auto by zoom depth)")
+    p.add_argument("--degree", type=int, default=3, help="multibrot exponent")
+    p.add_argument("--julia-re", type=float, default=-0.123)
+    p.add_argument("--julia-im", type=float, default=0.745)
+    p.add_argument("--crf", type=int, default=18, help="x264 quality (lower=better)")
+    p.add_argument("--workers", type=int, default=os.cpu_count() or 4)
+    return p
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        sys.exit("error: ffmpeg not found on PATH.")
+
+    # libx264 + yuv420p require even dimensions.
+    w, h = args.width - (args.width & 1), args.height - (args.height & 1)
+    if (w, h) != (args.width, args.height):
+        print(f"note: rounding size to even {w}x{h} for yuv420p", file=sys.stderr)
+
+    fractal = int(FRACTALS[args.fractal])
+    forced = int(PRECISIONS[args.precision]) if args.precision else None
+    zooms = zoom_schedule(args.zoom_start, args.zoom_end, args.frames)
+
+    def render_one(zoom):
+        re_w = INITIAL_RE_WIDTH / zoom
+        prec = forced if forced is not None else mg_core.choose_precision(re_w)
+        rmin, rmax, imin, imax = viewport(args.center_re, args.center_im, zoom, w, h)
+        smooth = mg_core.render_frame(
+            fractal, prec, rmin, rmax, imin, imax, w, h,
+            args.max_iter, args.escape_r2, args.degree, args.julia_re, args.julia_im)
+        return colorize(smooth, args.max_iter, args.cycles).tobytes()
+
+    cmd = [ffmpeg, "-y", "-loglevel", "error",
+           "-f", "rawvideo", "-pixel_format", "rgb24",
+           "-video_size", f"{w}x{h}", "-framerate", str(args.fps),
+           "-i", "-",
+           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", str(args.crf),
+           "-movflags", "+faststart", args.output]
+
+    print(f"Rendering {args.frames} frames ({w}x{h}) "
+          f"{args.fractal} zoom {args.zoom_start:g}->{args.zoom_end:g} "
+          f"on {args.workers} workers -> {args.output}")
+
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    window = max(1, args.workers) * 2
+    try:
+        with ThreadPoolExecutor(max_workers=args.workers) as ex:
+            pending = deque()
+            submit_idx = 0
+            for done in range(args.frames):
+                while submit_idx < args.frames and len(pending) < window:
+                    pending.append(ex.submit(render_one, zooms[submit_idx]))
+                    submit_idx += 1
+                proc.stdin.write(pending.popleft().result())
+                if (done + 1) % 10 == 0 or done + 1 == args.frames:
+                    print(f"\r  {done + 1}/{args.frames} frames", end="", flush=True)
+        print()
+    finally:
+        proc.stdin.close()
+        rc = proc.wait()
+    if rc != 0:
+        sys.exit(f"ffmpeg exited with code {rc}")
+    print(f"Wrote {args.output}")
+
+
+if __name__ == "__main__":
+    main()

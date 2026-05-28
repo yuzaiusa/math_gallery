@@ -1,0 +1,25 @@
+# Build artifacts
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Native modules
+*.so
+*.dylib
+*.pyd
+
+# CI-built WASM (never committed; built by the Pages workflow)
+pages/mandelbrot/wasm/core.js
+pages/mandelbrot/wasm/core.wasm
+
+# Movie output
+*.mp4
+*.mov
+frames/
+
+# Editor / OS
+.DS_Store
+.venv/
+venv/

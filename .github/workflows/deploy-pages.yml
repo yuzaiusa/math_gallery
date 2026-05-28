@@ -1,0 +1,60 @@
+name: Deploy to GitHub Pages
+
+# Builds the WebAssembly core with Emscripten and publishes the static site.
+# The .wasm/.js artifacts are built here (never committed) and bundled into the
+# Pages deployment.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; cancel in-progress runs for new pushes.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Build WASM core
+        run: |
+          emcmake cmake -B build/wasm -S .
+          cmake --build build/wasm -j
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/pages/mandelbrot/wasm
+          cp index.html _site/
+          cp -r pages/mandelbrot/*.html pages/mandelbrot/*.js pages/mandelbrot/*.json _site/pages/mandelbrot/
+          cp -r pages/lorenz _site/pages/lorenz
+          cp build/wasm/core.js build/wasm/core.wasm _site/pages/mandelbrot/wasm/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

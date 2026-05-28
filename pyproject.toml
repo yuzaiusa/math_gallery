@@ -1,0 +1,18 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "mg-movie"
+version = "0.1.0"
+description = "Math Gallery: native fractal rendering core + deep-zoom movie CLI"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.21"]
+
+[project.scripts]
+mg-movie = "mg_movie.cli:main"
+
+[tool.scikit-build]
+wheel.packages = ["cli/mg_movie"]
+cmake.version = ">=3.18"
+minimum-version = "0.10"
