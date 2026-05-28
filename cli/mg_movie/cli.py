@@ -11,6 +11,7 @@ import subprocess
 import sys
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from decimal import Decimal, getcontext
 
 import numpy as np
 
@@ -20,7 +21,25 @@ except ImportError:
     sys.exit("error: native module `mg_core` not found. Build/install it first "
              "(`pip install .` from the repo root).")
 
+getcontext().prec = 60  # headroom for the QD (~63-digit) center decomposition
+
 INITIAL_RE_WIDTH = 3.5  # matches the browser viewer's reset width
+
+# Fractals with a perturbation deep-zoom path, and the zoom past which we use it.
+PERTURB_FRACTALS = {"mandelbrot", "julia", "multibrot"}
+PERTURB_MIN_ZOOM = 1e10
+
+
+def decimal_to_qd(d):
+    """Decompose a Decimal into a quad-double (4 non-overlapping doubles whose
+    sum reproduces the value to ~63 digits). Decimal(float) is exact, so each
+    remainder is computed without loss."""
+    parts, r = [], d
+    for _ in range(4):
+        f = float(r)
+        parts.append(f)
+        r = r - Decimal(f)
+    return parts
 
 FRACTALS = {
     "mandelbrot":   mg_core.Fractal.MANDELBROT,
@@ -76,8 +95,9 @@ def build_parser():
         description="Render a deep-zoom fractal dive to an MP4 video.")
     p.add_argument("-o", "--output", default="dive.mp4", help="output video path")
     p.add_argument("--fractal", choices=FRACTALS, default="mandelbrot")
-    p.add_argument("--center-re", type=float, default=-0.743643887037151)
-    p.add_argument("--center-im", type=float, default=0.13182590420533)
+    # Strings so deep-zoom centers keep full precision (parsed as Decimal -> QD).
+    p.add_argument("--center-re", type=str, default="-0.743643887037151")
+    p.add_argument("--center-im", type=str, default="0.13182590420533")
     p.add_argument("--zoom-start", type=float, default=1.0)
     p.add_argument("--zoom-end", type=float, default=1e6)
     p.add_argument("--frames", type=int, default=300)
@@ -113,13 +133,26 @@ def main(argv=None):
     forced = int(PRECISIONS[args.precision]) if args.precision else None
     zooms = zoom_schedule(args.zoom_start, args.zoom_end, args.frames)
 
+    cre_dec, cim_dec = Decimal(args.center_re), Decimal(args.center_im)
+    cre_f64, cim_f64 = float(cre_dec), float(cim_dec)
+    cre_qd, cim_qd = decimal_to_qd(cre_dec), decimal_to_qd(cim_dec)
+    # Perturbation handles the deep frames (and removes the f64-center wall) for
+    # the supported fractals, unless the user pinned a precision tier.
+    perturb_ok = args.fractal in PERTURB_FRACTALS and forced is None
+
     def render_one(zoom):
         re_w = INITIAL_RE_WIDTH / zoom
-        prec = forced if forced is not None else mg_core.choose_precision(re_w)
-        rmin, rmax, imin, imax = viewport(args.center_re, args.center_im, zoom, w, h)
-        smooth = mg_core.render_frame(
-            fractal, prec, rmin, rmax, imin, imax, w, h,
-            args.max_iter, args.escape_r2, args.degree, args.julia_re, args.julia_im)
+        if perturb_ok and zoom > PERTURB_MIN_ZOOM:
+            im_h = re_w * h / w
+            smooth = mg_core.render_frame_perturb(
+                fractal, cre_qd, cim_qd, re_w, im_h, w, h,
+                args.max_iter, args.escape_r2, args.degree, args.julia_re, args.julia_im)
+        else:
+            prec = forced if forced is not None else mg_core.choose_precision(re_w)
+            rmin, rmax, imin, imax = viewport(cre_f64, cim_f64, zoom, w, h)
+            smooth = mg_core.render_frame(
+                fractal, prec, rmin, rmax, imin, imax, w, h,
+                args.max_iter, args.escape_r2, args.degree, args.julia_re, args.julia_im)
         return colorize(smooth, args.max_iter, args.cycles).tobytes()
 
     cmd = [ffmpeg, "-y", "-loglevel", "error",

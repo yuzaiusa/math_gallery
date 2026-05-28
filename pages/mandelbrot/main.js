@@ -36,9 +36,18 @@ const DEFAULT_CENTER = {
   [FRAC.BURNING_SHIP]: { re: -0.5, im: -0.5 },
 };
 
-let state = { reMin: -2.5, reMax: 1.0, imMin: -1.75, imMax: 1.75 };
+// Fractals that have a perturbation deep-zoom path (the rest stay on direct
+// DD/QD kernels), and the zoom past which we switch to it.
+const PERTURB_FRACTALS = new Set([FRAC.MANDELBROT, FRAC.JULIA, FRAC.MULTIBROT]);
+const PERTURB_MIN_ZOOM = 1e10;
+
+// The view: center stored in QD (so deep zoom isn't capped by the f64 coordinate
+// wall), real-axis width a plain double. The imaginary extent follows the aspect.
+let view = { cre: [-0.75, 0, 0, 0], cim: [0, 0, 0, 0], reWidth: INITIAL_RE_WIDTH };
 let imageData = null;
 let rawCache = null;   // Float32Array of smooth-escape values, width*height
+
+function imHeightFor(reWidth) { return reWidth * canvas.height / canvas.width; }
 
 // Pick precision tier from the view's real-axis width (mirrors choose_precision).
 function choosePrecision(reWidth) {
@@ -98,6 +107,7 @@ let stripQueue = [];
 let stripsTotal = 0;
 let stripsDone = 0;
 let currentParams = null;
+let currentMsgType = 'strip';   // 'strip' (direct) or 'strip-perturb'
 let renderMaxIter = 4096;
 let renderCycles = 1;
 
@@ -135,7 +145,7 @@ function assignNext(i) {
   if (!wReady[i] || wBusy[i] || stripQueue.length === 0) return;
   const s = stripQueue.shift();
   wBusy[i] = true;
-  workers[i].postMessage({ type: 'strip', epoch: renderEpoch, y0: s.y0, y1: s.y1, params: currentParams });
+  workers[i].postMessage({ type: currentMsgType, epoch: renderEpoch, y0: s.y0, y1: s.y1, params: currentParams });
 }
 
 function paintStrip(msg) {
@@ -158,40 +168,61 @@ function startRender() {
   const maxIter = parseInt(maxIterInput.value, 10) || 4096;
   const colorCycles = parseFloat(colorCyclesInput.value) || 1;
   const fractal = parseInt(fractalSelect.value, 10) || 0;
-  const { reMin, reMax, imMin, imMax } = state;
 
-  const reWidth = reMax - reMin;
+  const reWidth = view.reWidth;
+  const imHeight = imHeightFor(reWidth);
   const precision = choosePrecision(reWidth);
-
   const zoom = INITIAL_RE_WIDTH / reWidth;
-  const centerRe = (reMin + reMax) / 2;
-  const centerIm = (imMin + imMax) / 2;
+  const usePerturb = PERTURB_FRACTALS.has(fractal) && zoom > PERTURB_MIN_ZOOM;
+
+  // Display: enough digits to resolve the view; QD string past the f64 limit.
   const sigFigs = Math.max(6, Math.ceil(Math.log10(zoom)) + 4);
-  centerReInput.value = centerRe.toPrecision(sigFigs);
-  centerImInput.value = centerIm.toPrecision(sigFigs);
+  if (zoom > 1e9) {
+    centerReInput.value = qdToString(view.cre, sigFigs);
+    centerImInput.value = qdToString(view.cim, sigFigs);
+  } else {
+    centerReInput.value = view.cre[0].toPrecision(Math.min(sigFigs, 15));
+    centerImInput.value = view.cim[0].toPrecision(Math.min(sigFigs, 15));
+  }
   zoomInput.value = zoom.toPrecision(6);
-  statusEl.textContent = PREC_NAME[precision];
+  statusEl.textContent = usePerturb ? '[perturbation deep zoom]' : PREC_NAME[precision];
 
   imageData = ctx.createImageData(canvas.width, canvas.height);
   rawCache = new Float32Array(canvas.width * canvas.height);
   renderMaxIter = maxIter;
   renderCycles = colorCycles;
 
-  currentParams = {
-    fractal,
-    precision,
-    reMin,
-    reRange: reMax - reMin,
-    imMax,
-    imRange: imMax - imMin,
-    canvasW: canvas.width,
-    canvasH: canvas.height,
-    maxIter,
-    escapeR2: 4,
-    degree: Math.max(2, parseInt(degreeInput.value, 10) || 3),
-    juliaRe: parseFloat(juliaReInput.value) || 0,
-    juliaIm: parseFloat(juliaImInput.value) || 0,
-  };
+  const degree = Math.max(2, parseInt(degreeInput.value, 10) || 3);
+  const juliaRe = parseFloat(juliaReInput.value) || 0;
+  const juliaIm = parseFloat(juliaImInput.value) || 0;
+
+  if (usePerturb) {
+    currentMsgType = 'strip-perturb';
+    currentParams = {
+      fractal, degree, juliaRe, juliaIm,
+      creQD: view.cre.slice(), cimQD: view.cim.slice(),
+      reSpan: reWidth, imSpan: imHeight,
+      canvasW: canvas.width, canvasH: canvas.height,
+      maxIter, escapeR2: 4,
+    };
+  } else {
+    currentMsgType = 'strip';
+    const reMin = view.cre[0] - reWidth / 2;
+    const imMax = view.cim[0] + imHeight / 2;
+    currentParams = {
+      fractal,
+      precision,
+      reMin,
+      reRange: reWidth,
+      imMax,
+      imRange: imHeight,
+      canvasW: canvas.width,
+      canvasH: canvas.height,
+      maxIter,
+      escapeR2: 4,
+      degree, juliaRe, juliaIm,
+    };
+  }
 
   // Build strip queue (~6 strips per worker for load balancing + progressive paint).
   const stripRows = Math.max(8, Math.round(canvas.height / (N_WORKERS * 6)));
@@ -244,13 +275,14 @@ function onDragEnd() {
   }
   const { x, y, w, h } = dragRect;
   const cw = canvas.width, ch = canvas.height;
-  const reRange = state.reMax - state.reMin;
-  const imRange = state.imMax - state.imMin;
-  const newReMin = state.reMin + (x / cw) * reRange;
-  const newReMax = state.reMin + ((x + w) / cw) * reRange;
-  const newImMax = state.imMax - (y / ch) * imRange;
-  const newImMin = state.imMax - ((y + h) / ch) * imRange;
-  state = { reMin: newReMin, reMax: newReMax, imMin: newImMin, imMax: newImMax };
+  const reWidth = view.reWidth;
+  const imHeight = imHeightFor(reWidth);
+  const rectCx = x + w / 2, rectCy = y + h / 2;
+  const dRe = (rectCx / cw - 0.5) * reWidth;
+  const dIm = (0.5 - rectCy / ch) * imHeight;
+  view.cre = qdAdd(view.cre, [dRe, 0, 0, 0]);
+  view.cim = qdAdd(view.cim, [dIm, 0, 0, 0]);
+  view.reWidth = (w / cw) * reWidth;
   dragStart = null;
   dragRect = null;
   octx.clearRect(0, 0, overlay.width, overlay.height);
@@ -278,7 +310,10 @@ overlay.addEventListener('touchstart', (e) => {
     lastTouchCenter = touchCenter(e.touches[0], e.touches[1]);
     singleTouchStart = null;
   } else if (e.touches.length === 1) {
-    singleTouchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, state: { ...state } };
+    singleTouchStart = {
+      x: e.touches[0].clientX, y: e.touches[0].clientY,
+      view: { cre: view.cre.slice(), cim: view.cim.slice(), reWidth: view.reWidth },
+    };
     lastTouchDist = null; lastTouchCenter = null;
   }
 }, { passive: false });
@@ -293,27 +328,27 @@ overlay.addEventListener('touchmove', (e) => {
       const rect = overlay.getBoundingClientRect();
       const cx = (center.x - rect.left) / canvas.width;
       const cy = (center.y - rect.top) / canvas.height;
-      const reRange = state.reMax - state.reMin;
-      const imRange = state.imMax - state.imMin;
-      const pivotRe = state.reMin + cx * reRange;
-      const pivotIm = state.imMax - cy * imRange;
-      state.reMin = pivotRe + (state.reMin - pivotRe) * scale;
-      state.reMax = pivotRe + (state.reMax - pivotRe) * scale;
-      state.imMin = pivotIm + (state.imMin - pivotIm) * scale;
-      state.imMax = pivotIm + (state.imMax - pivotIm) * scale;
+      const reWidth = view.reWidth;
+      const imHeight = imHeightFor(reWidth);
+      // Scale the view about the pinch pivot; the center shifts toward it.
+      const dRe = (cx - 0.5) * reWidth * (1 - scale);
+      const dIm = (0.5 - cy) * imHeight * (1 - scale);
+      view.cre = qdAdd(view.cre, [dRe, 0, 0, 0]);
+      view.cim = qdAdd(view.cim, [dIm, 0, 0, 0]);
+      view.reWidth = reWidth * scale;
       startRender();
     }
     lastTouchDist = dist; lastTouchCenter = center; singleTouchStart = null;
   } else if (e.touches.length === 1 && singleTouchStart) {
     const dx = e.touches[0].clientX - singleTouchStart.x;
     const dy = e.touches[0].clientY - singleTouchStart.y;
-    const s = singleTouchStart.state;
-    const reRange = s.reMax - s.reMin;
-    const imRange = s.imMax - s.imMin;
-    const dRe = (dx / canvas.width) * reRange;
-    const dIm = (dy / canvas.height) * imRange;
-    state.reMin = s.reMin - dRe; state.reMax = s.reMax - dRe;
-    state.imMin = s.imMin + dIm; state.imMax = s.imMax + dIm;
+    const s = singleTouchStart.view;
+    const imHeight = imHeightFor(s.reWidth);
+    const dRe = (dx / canvas.width) * s.reWidth;
+    const dIm = (dy / canvas.height) * imHeight;
+    view.cre = qdAdd(s.cre, [-dRe, 0, 0, 0]);
+    view.cim = qdAdd(s.cim, [dIm, 0, 0, 0]);
+    view.reWidth = s.reWidth;
     startRender();
   }
 }, { passive: false });
@@ -325,24 +360,18 @@ overlay.addEventListener('touchend', (e) => {
 
 // --- Viewport helpers ---
 
-function setViewCentered(centerRe, centerIm, reWidth) {
-  const imHeight = reWidth * canvas.height / canvas.width;
-  state.reMin = centerRe - reWidth / 2;
-  state.reMax = centerRe + reWidth / 2;
-  state.imMin = centerIm - imHeight / 2;
-  state.imMax = centerIm + imHeight / 2;
-}
-
+// centerRe/centerIm are QD values (length-4 arrays); zoom is a plain double.
 function navigateTo(centerRe, centerIm, zoom) {
-  setViewCentered(centerRe, centerIm, INITIAL_RE_WIDTH / zoom);
+  view.cre = centerRe.slice();
+  view.cim = centerIm.slice();
+  view.reWidth = INITIAL_RE_WIDTH / zoom;
   startRender();
 }
 
 function resetView() {
   const fractal = parseInt(fractalSelect.value, 10) || 0;
   const c = DEFAULT_CENTER[fractal] || { re: -0.75, im: 0 };
-  setViewCentered(c.re, c.im, INITIAL_RE_WIDTH);
-  startRender();
+  navigateTo([c.re, 0, 0, 0], [c.im, 0, 0, 0], 1);
 }
 
 // --- Controls ---
@@ -371,11 +400,11 @@ fractalSelect.addEventListener('change', () => {
 });
 
 function applyInputs() {
-  const centerRe = parseFloat(centerReInput.value);
-  const centerIm = parseFloat(centerImInput.value);
   const zoom = parseFloat(zoomInput.value);
-  if (isNaN(centerRe) || isNaN(centerIm) || isNaN(zoom) || zoom <= 0) return;
-  navigateTo(centerRe, centerIm, zoom);
+  if (isNaN(zoom) || zoom <= 0) return;
+  // Parse the center strings in full QD precision so pasted deep-zoom
+  // coordinates aren't truncated to f64.
+  navigateTo(qdFromString(centerReInput.value), qdFromString(centerImInput.value), zoom);
 }
 
 zoomBtn.addEventListener('click', applyInputs);
@@ -384,11 +413,9 @@ zoomBtn.addEventListener('click', applyInputs);
 });
 
 function rezoom(factor) {
-  const centerRe = parseFloat(centerReInput.value);
-  const centerIm = parseFloat(centerImInput.value);
-  const zoom = parseFloat(zoomInput.value);
-  if (isNaN(centerRe) || isNaN(centerIm) || isNaN(zoom) || zoom <= 0) return;
-  navigateTo(centerRe, centerIm, zoom * factor);
+  // Operate on the live view (keeps the QD center exact; no text round-trip).
+  view.reWidth /= factor;
+  startRender();
 }
 zoom2xBtn.addEventListener('click', () => rezoom(2));
 zoom05xBtn.addEventListener('click', () => rezoom(0.5));
@@ -396,9 +423,10 @@ zoom05xBtn.addEventListener('click', () => rezoom(0.5));
 // --- Save (PNG with annotation) ---
 
 document.getElementById('save-btn').addEventListener('click', () => {
-  const centerRe = (state.reMin + state.reMax) / 2;
-  const centerIm = (state.imMin + state.imMax) / 2;
-  const zoom = INITIAL_RE_WIDTH / (state.reMax - state.reMin);
+  const zoom = INITIAL_RE_WIDTH / view.reWidth;
+  const sigFigs = Math.max(12, Math.ceil(Math.log10(zoom)) + 4);
+  const reStr = zoom > 1e9 ? qdToString(view.cre, sigFigs) : view.cre[0].toPrecision(12);
+  const imStr = zoom > 1e9 ? qdToString(view.cim, sigFigs) : view.cim[0].toPrecision(12);
   const fractalName = fractalSelect.options[fractalSelect.selectedIndex].text;
 
   const offscreen = document.createElement('canvas');
@@ -409,8 +437,8 @@ document.getElementById('save-btn').addEventListener('click', () => {
 
   const lines = [
     fractalName,
-    `Re = ${centerRe.toPrecision(12)}`,
-    `Im = ${centerIm.toPrecision(12)}`,
+    `Re = ${reStr}`,
+    `Im = ${imStr}`,
     `Zoom = ${zoom.toPrecision(6)}`,
   ];
   const fontSize = Math.max(10, Math.round(canvas.width / 110));
@@ -436,10 +464,8 @@ document.getElementById('save-btn').addEventListener('click', () => {
 // --- D-pad + keyboard navigation ---
 
 function panBy(fracX, fracY) {
-  const dRe = (state.reMax - state.reMin) * fracX;
-  const dIm = (state.imMax - state.imMin) * fracY;
-  state.reMin += dRe; state.reMax += dRe;
-  state.imMin += dIm; state.imMax += dIm;
+  view.cre = qdAdd(view.cre, [view.reWidth * fracX, 0, 0, 0]);
+  view.cim = qdAdd(view.cim, [imHeightFor(view.reWidth) * fracY, 0, 0, 0]);
   startRender();
 }
 
@@ -481,7 +507,7 @@ document.querySelectorAll('.ipoint').forEach(el => {
     if (el.dataset.degree)  degreeInput.value = el.dataset.degree;
     if (el.dataset.juliare) juliaReInput.value = el.dataset.juliare;
     if (el.dataset.juliaim) juliaImInput.value = el.dataset.juliaim;
-    navigateTo(parseFloat(el.dataset.re), parseFloat(el.dataset.im), parseFloat(el.dataset.zoom));
+    navigateTo(qdFromString(el.dataset.re), qdFromString(el.dataset.im), parseFloat(el.dataset.zoom));
   });
 });
 
@@ -492,11 +518,8 @@ function initCanvas() {
   const h = window.innerHeight - document.getElementById('controls').offsetHeight;
   canvas.width = w; canvas.height = h;
   overlay.width = w; overlay.height = h;
-  // keep the current center/scale, refit imaginary axis to the new aspect
-  const reWidth = state.reMax - state.reMin;
-  const reCenter = (state.reMin + state.reMax) / 2;
-  const imCenter = (state.imMin + state.imMax) / 2;
-  setViewCentered(reCenter, imCenter, reWidth);
+  // The imaginary extent is derived from reWidth and the aspect at render time,
+  // so a resize needs no view adjustment.
 }
 
 let resizeTimer = null;

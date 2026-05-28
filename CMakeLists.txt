@@ -26,7 +26,7 @@ if(EMSCRIPTEN)
     "-sENVIRONMENT=worker"
     "-sALLOW_MEMORY_GROWTH=1"
     "-sFILESYSTEM=0"
-    "-sEXPORTED_RUNTIME_METHODS=['HEAPF32','ccall']"
+    "-sEXPORTED_RUNTIME_METHODS=['HEAPF32','HEAPF64','ccall']"
     "-sEXPORTED_FUNCTIONS=['_mg_render_band','_mg_choose_precision','_mg_perturb_reference','_mg_render_band_perturb','_malloc','_free']"
   )
 else()
