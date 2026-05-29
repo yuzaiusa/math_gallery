@@ -15,11 +15,16 @@ Live site: deployed to GitHub Pages from `main` (see [Deployment](#github-pages-
 ## Repository layout
 
 ```
-index.html                  Gallery landing page
+index.html                  Gallery landing page (topic-grouped, live heroes)
+assets/                     Shared front-end: site.css, heroes.js
+  films/                    Committed muted-loop preview clips (*_preview.mp4)
 pages/mandelbrot/           Fractal viewer (HTML + JS + WASM)
   index.html  main.js  worker.js  qd.js  points_of_interest.json
   wasm/                     core.js + core.wasm  (built, gitignored)
-pages/lorenz/               Placeholder ("coming soon")
+pages/films/                Deep-dive films gallery (data-driven from points.json)
+pages/equations/            Equations / explainer (placeholder)
+pages/lorenz/               Lorenz teaser ("coming soon")
+movies/points.json          Film catalogue — source of truth for the films page
 core/include/mg/            Header-only C++ core (precision tiers, fractals, perturbation)
 core/src/wasm_api.cpp       WASM C entry points
 core/bindings/py_module.cpp pybind11 bindings (module name: mg_core)
@@ -143,6 +148,48 @@ c++ -O3 -std=c++17 -ffp-contract=off -shared -fPIC -undefined dynamic_lookup \
 Run from a directory where `mg_core` is importable (e.g. the repo root), then
 `python3 -m mg_movie.cli ...` or import `mg_core` directly.
 
+## Deep-dive films gallery
+
+The **Deep-dive films** page (`pages/films/index.html`) is data-driven: it renders
+one card per entry in [`movies/points.json`](movies/points.json) at runtime — no HTML
+editing needed to add a film. Each entry looks like:
+
+```json
+{
+  "id": 1, "name": "Seahorse Valley", "fractal": "mandelbrot",
+  "re": "-0.748548706415072803150", "im": "0.100524966248010897607",
+  "zoom": 3e16, "maxiter": 4096, "cycles": 2.65,
+  "file": "seahorse_valley.mp4",
+  "preview_start_second": 3, "preview_end_second": 8,
+  "text": "A descent into the seahorse-tailed filaments…",
+  "url": "https://youtu.be/HI7p6k_pDJk"
+}
+```
+
+The page shows the `fractal / Re / Im / zoom / cycles / maxIter` parameters and `text`,
+plays a short looping **preview** as the thumbnail, and click-to-plays the full film
+from YouTube (`url`) via a lazy `youtube-nocookie` embed. The preview is a small muted
+loop committed at `assets/films/<file-without-.mp4>_preview.mp4` — large originals in
+`movies/` stay gitignored (the films live on YouTube), while the preview clips are kept
+via the `!assets/films/*.mp4` exception in `.gitignore`.
+
+### Publishing a new film — the `sync-films` skill
+
+Adding a film is automated by a Claude Code skill (`sync-films`, in
+`~/.claude/skills/sync-films/`). Workflow:
+
+1. Render the dive (e.g. with `mg-movie`) and upload it to YouTube.
+2. Drop the rendered `.mp4` into `movies/` (filename must match the entry's `file`).
+3. Add the entry to `movies/points.json` (with `url`, `preview_start_second`,
+   `preview_end_second`, and the parameters above).
+4. In Claude Code, run **`/sync-films`** (or say "add the new film").
+
+The skill diffs `movies/points.json` against the committed version, verifies each new
+entry's source `.mp4` exists, cuts the preview clip from the `preview_start/end_second`
+range into `assets/films/`, then commits, pushes, and verifies the GitHub Pages deploy.
+It only *adds* new entries (matched by `id`) and never edits existing ones or commits
+the large originals.
+
 ## GitHub Pages deployment
 
 Deployment is automated by [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml).
@@ -150,8 +197,9 @@ On every push to `main` (or a manual **Run workflow** via `workflow_dispatch`), 
 
 1. installs Emscripten,
 2. builds the WASM core from source (`emcmake cmake … && cmake --build …`),
-3. assembles `_site/` — landing page, viewer HTML/JS, and the freshly built
-   `core.js` / `core.wasm` — and publishes it to GitHub Pages.
+3. assembles `_site/` — landing page, shared `assets/`, the viewer/films/equations/
+   lorenz pages, `movies/points.json`, and the freshly built `core.js` / `core.wasm` —
+   and publishes it to GitHub Pages.
 
 The `.wasm`/`.js` artifacts are **never committed**; CI always rebuilds them, so a
 core change reaches production just by pushing. (This is why the
