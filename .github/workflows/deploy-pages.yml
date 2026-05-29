@@ -39,8 +39,11 @@ jobs:
         run: |
           mkdir -p _site/pages/mandelbrot/wasm
           cp index.html _site/
+          cp -r assets _site/assets
           cp -r pages/mandelbrot/*.html pages/mandelbrot/*.js pages/mandelbrot/*.json _site/pages/mandelbrot/
           cp -r pages/lorenz _site/pages/lorenz
+          cp -r pages/films _site/pages/films
+          cp -r pages/equations _site/pages/equations
           cp build/wasm/core.js build/wasm/core.wasm _site/pages/mandelbrot/wasm/
 
       - name: Upload Pages artifact
