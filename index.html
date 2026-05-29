@@ -3,84 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Math Gallery</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --fg: #e8e8ea; --muted: #8a8a93; --bg: #0d0d10; --card: #16161c; --line: #2a2a33; --accent: #7af; }
-    body {
-      background: var(--bg);
-      color: var(--fg);
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      min-height: 100vh;
-      padding: 48px 24px;
-    }
-    header { max-width: 980px; margin: 0 auto 40px; }
-    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.5px; }
-    header p { color: var(--muted); margin-top: 10px; font-size: 14px; line-height: 1.6; max-width: 620px; }
-    .grid {
-      max-width: 980px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 18px;
-    }
-    .card {
-      display: block;
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 20px;
-      text-decoration: none;
-      color: inherit;
-      transition: border-color 0.15s, transform 0.15s;
-    }
-    .card.live:hover { border-color: var(--accent); transform: translateY(-2px); }
-    .card.soon { opacity: 0.6; cursor: default; }
-    .card h2 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
-    .card p { color: var(--muted); font-size: 13px; line-height: 1.55; }
-    .tag {
-      display: inline-block;
-      font-size: 10px;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      padding: 2px 7px;
-      border-radius: 4px;
-      margin-bottom: 12px;
-    }
-    .tag.live { background: rgba(119,170,255,0.15); color: var(--accent); }
-    .tag.soon { background: rgba(138,138,147,0.15); color: var(--muted); }
-    footer { max-width: 980px; margin: 48px auto 0; color: var(--muted); font-size: 12px; }
-    footer a { color: var(--muted); }
-  </style>
+  <title>Math Gallery — a catalogue of mathematical objects</title>
+  <meta name="description" content="Interactive, live-rendered visualizations of mathematical objects — fractals, chaos, and more — each presented as a living specimen.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;0,9..144,380;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-  <header>
-    <h1>Math Gallery</h1>
-    <p>Interactive visualizations of mathematical objects. Each piece renders in
-       your browser; some also ship an offline tool for high-resolution stills and
-       deep-zoom movies.</p>
-  </header>
+  <div class="shell">
 
-  <main class="grid">
-    <a class="card live" href="pages/mandelbrot/index.html">
-      <span class="tag live">Live</span>
-      <h2>Fractal Viewer</h2>
-      <p>Explore the Mandelbrot set and its relatives — Julia, Multibrot, Tricorn,
-         and Burning Ship — with deep multi-precision zoom, powered by a native
-         WebAssembly core.</p>
-    </a>
+    <header class="masthead">
+      <p class="eyebrow reveal d1">Math Gallery · a catalogue of mathematical objects</p>
+      <h1 class="reveal d2">The shapes that <em>arithmetic</em> makes.</h1>
+      <p class="lede reveal d3">A small museum of mathematical objects, each rendered live in your
+        browser from the equations that define it. Every specimen opens onto its own collection —
+        an interactive instrument, deep-zoom films, and the mathematics behind it. Built on a shared
+        C++ core compiled to <a href="https://github.com/yuzaiusa/math_gallery">WebAssembly</a>.</p>
+    </header>
 
-    <div class="card soon">
-      <span class="tag soon">Coming soon</span>
-      <h2>Lorenz Attractor</h2>
-      <p>A real-time view of the Lorenz system — the canonical strange attractor
-         and a window into deterministic chaos.</p>
-    </div>
-  </main>
+    <main>
+      <!-- ================= FRACTALS ================= -->
+      <section class="topic fractals">
+        <p class="topic-label reveal d3">Collection I — Fractals<span class="count">complex dynamics</span></p>
 
-  <footer>
-    <p>Built with a shared C++ core compiled to WebAssembly. Source &amp; the
-       deep-zoom movie CLI live in this repository.</p>
-  </footer>
+        <article class="plate reveal d4">
+          <figure class="plate-figure">
+            <div class="hero-frame"><canvas data-hero="mandelbrot" aria-label="Live Mandelbrot set zoom"></canvas></div>
+            <figcaption class="hero-cap">
+              <span class="fig">fig. 01 — escape-time, live</span>
+              <span>seahorse valley · ↻ auto-zoom</span>
+            </figcaption>
+          </figure>
+
+          <div class="plate-body">
+            <p class="figno">No. 01</p>
+            <h2>The Mandelbrot Set</h2>
+            <p class="latin">the set of c for which the orbit of 0 stays bounded</p>
+            <p class="equation">z<sub>n+1</sub> = z<sub>n</sub><b>²</b> + c,&nbsp;&nbsp;z<sub>0</sub> = 0</p>
+            <p>Infinite structure from a single quadratic rule. Pan and zoom through the
+              boundary in real time — Julia, Multibrot, Tricorn and Burning Ship included —
+              with multi-precision arithmetic and perturbation theory carrying the deep dives
+              far past where ordinary doubles collapse.</p>
+
+            <ul class="links">
+              <li><a class="link" href="pages/mandelbrot/index.html">
+                <span class="arrow">→</span><span class="name">Interactive viewer</span>
+                <span class="desc">WebAssembly · f64 / dd / qd</span></a></li>
+              <li><a class="link" href="pages/films/index.html">
+                <span class="arrow">→</span><span class="name">Deep-dive films</span>
+                <span class="desc">3 dives</span></a></li>
+              <li><a class="link" href="pages/equations/index.html">
+                <span class="arrow">→</span><span class="name">The mathematics</span>
+                <span class="desc">draft</span></a></li>
+            </ul>
+          </div>
+        </article>
+      </section>
+
+      <!-- ================= CHAOS ================= -->
+      <section class="topic chaos">
+        <p class="topic-label reveal d4">Collection II — Chaos<span class="count">dynamical systems</span></p>
+
+        <article class="plate flip reveal d5">
+          <figure class="plate-figure">
+            <div class="hero-frame"><canvas data-hero="lorenz" aria-label="Live Lorenz attractor"></canvas></div>
+            <figcaption class="hero-cap">
+              <span class="fig">fig. 02 — RK4 integration, live</span>
+              <span>σ=10 · ρ=28 · β=8/3</span>
+            </figcaption>
+          </figure>
+
+          <div class="plate-body">
+            <p class="figno">No. 02</p>
+            <h2>The Lorenz Attractor</h2>
+            <p class="latin">a trajectory that never repeats and never escapes</p>
+            <p class="equation">ẋ = σ(y−x),&nbsp; ẏ = x(ρ−z)−y,&nbsp; ż = xy−<b>β</b>z</p>
+            <p>Three simple equations for convection rolls — and the birth of chaos theory.
+              Nearby starts diverge exponentially, yet the path is forever trapped on a
+              butterfly-shaped attractor. A full interactive page is in the workshop.</p>
+
+            <ul class="links">
+              <li><a class="link" href="pages/lorenz/index.html">
+                <span class="arrow">→</span><span class="name">Preview &amp; notes</span>
+                <span class="desc"><span class="tag">soon</span></span></a></li>
+            </ul>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <span>© 2026 Math Gallery — rendered live from first principles.</span>
+      <span>One shared C++ core · WebAssembly + Python · <a href="https://github.com/yuzaiusa/math_gallery">source</a></span>
+    </footer>
+
+  </div>
+  <script src="assets/heroes.js"></script>
 </body>
 </html>

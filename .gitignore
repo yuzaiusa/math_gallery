@@ -14,10 +14,12 @@ __pycache__/
 pages/mandelbrot/wasm/core.js
 pages/mandelbrot/wasm/core.wasm
 
-# Movie output
+# Movie output (large renders stay out of git; YouTube-hosted)
 *.mp4
 *.mov
 frames/
+# ...except the small committed web preview loops for the film gallery
+!assets/films/*.mp4
 
 # Editor / OS
 .DS_Store

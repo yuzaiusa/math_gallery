@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep-dive Films — Math Gallery</title>
+  <meta name="description" content="Rendered deep-zoom journeys into the Mandelbrot set and its relatives.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;0,9..144,380;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+  <style>
+    .topic.fractals { --accent: #6cc6ff; }
+    .page-head { padding: 8px 0 clamp(28px, 5vh, 56px); }
+    .page-head h1 {
+      font-family: var(--display); font-weight: 340;
+      font-size: clamp(40px, 7vw, 78px); line-height: 0.96;
+      letter-spacing: -0.02em; margin-top: 14px;
+    }
+    .page-head .lede { margin-top: 18px; max-width: 56ch; color: var(--fg-soft); }
+
+    .films {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: clamp(26px, 3.5vw, 44px);
+      padding-bottom: 24px;
+    }
+    @media (max-width: 560px) { .films { grid-template-columns: 1fr; } }
+
+    .film { display: flex; flex-direction: column; }
+    .film-media {
+      position: relative;
+      aspect-ratio: 16 / 10;
+      border: 1px solid var(--line-2);
+      background: #05060a;
+      overflow: hidden;
+    }
+    .film-media video, .film-media iframe {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; border: 0; display: block;
+    }
+    .film-media .placeholder {
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em;
+      color: var(--faint);
+      background:
+        radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 9px);
+    }
+    .zoom-badge {
+      position: absolute; left: 12px; top: 12px;
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+      padding: 4px 9px; border-radius: 3px;
+      background: rgba(5,6,10,0.7); color: var(--accent);
+      backdrop-filter: blur(3px); border: 1px solid var(--line-2);
+    }
+    .play {
+      position: absolute; inset: 0; cursor: pointer;
+      display: grid; place-items: center;
+      background: linear-gradient(transparent 40%, rgba(5,6,10,0.55));
+      border: 0; color: var(--fg); font-family: var(--mono);
+      transition: background 0.3s var(--ease);
+    }
+    .play:hover { background: rgba(5,6,10,0.32); }
+    .play .disc {
+      width: 62px; height: 62px; border-radius: 50%;
+      display: grid; place-items: center;
+      border: 1px solid var(--accent);
+      background: rgba(5,6,10,0.5); backdrop-filter: blur(3px);
+      transition: transform 0.3s var(--ease);
+    }
+    .play:hover .disc { transform: scale(1.08); }
+    .play .disc::after {
+      content: ""; margin-left: 4px;
+      border-left: 16px solid var(--accent);
+      border-top: 10px solid transparent; border-bottom: 10px solid transparent;
+    }
+    .play .label {
+      position: absolute; bottom: 14px; left: 14px;
+      font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--fg-soft);
+    }
+    .play[disabled] { cursor: default; }
+    .play[disabled] .disc { opacity: 0.4; border-style: dashed; }
+
+    .film-info { padding-top: 16px; }
+    .film-info h3 {
+      font-family: var(--display); font-weight: 360;
+      font-size: 25px; letter-spacing: -0.01em;
+    }
+    .film-info .fractal {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--accent); margin: 3px 0 10px;
+    }
+    .film-info .blurb { color: var(--fg-soft); font-size: 16.5px; max-width: 52ch; }
+    .film-info .coords {
+      margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line);
+      font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+      line-height: 1.8; word-break: break-word;
+    }
+    .film-info .coords b { color: var(--fg-soft); font-weight: 500; }
+
+    .empty, .error {
+      font-family: var(--mono); font-size: 13px; color: var(--muted);
+      padding: 40px 0;
+    }
+  </style>
+</head>
+<body class="topic fractals">
+  <div class="shell">
+    <a class="back" href="../../index.html"><span class="arrow">←</span> Math Gallery</a>
+
+    <header class="page-head">
+      <p class="eyebrow">Collection I — Fractals · Films</p>
+      <h1>Deep-dive films</h1>
+      <p class="lede">Rendered journeys into the boundary of the Mandelbrot set — each frame
+        computed by the same C++ core that powers the live viewer, then encoded frame-by-frame
+        into a continuous dive. Tap a plate to watch the full film.</p>
+    </header>
+
+    <main id="films" class="films" aria-live="polite">
+      <p class="empty">Loading catalogue…</p>
+    </main>
+
+    <footer class="colophon">
+      <span>Films rendered with the <code>mg-movie</code> CLI.</span>
+      <span><a href="../../index.html">← back to the gallery</a></span>
+    </footer>
+  </div>
+
+  <script>
+    const SUP = { "-": "⁻", "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹" };
+    const sup = (s) => String(s).split("").map((c) => SUP[c] || c).join("");
+    function fmtZoom(z) {
+      if (!isFinite(z) || z <= 0) return "—";
+      const exp = Math.floor(Math.log10(z));
+      const mant = z / Math.pow(10, exp);
+      return exp >= 3 ? `×${mant.toFixed(1)}×10${sup(exp)}` : `×${Math.round(z).toLocaleString()}`;
+    }
+    const trim = (s, n = 15) => {
+      const str = String(s);
+      const neg = str.startsWith("-");
+      const digits = str.replace("-", "").replace(".", "").replace(/^0+/, "").length;
+      return digits > n ? (neg ? "−" : "") + str.replace("-", "").slice(0, n + 2) + "…" : str.replace("-", "−");
+    };
+
+    function card(f) {
+      const el = document.createElement("article");
+      el.className = "film";
+      const hasVideo = !!f.youtube;
+      const media = f.preview
+        ? `<video src="${f.preview}" muted loop autoplay playsinline preload="metadata"></video>`
+        : `<div class="placeholder">render in progress</div>`;
+      const overlay = hasVideo
+        ? `<button class="play" aria-label="Watch ${f.title}"><span class="disc"></span><span class="label">Watch film</span></button>`
+        : `<button class="play" disabled><span class="disc"></span><span class="label">Film coming soon</span></button>`;
+
+      el.innerHTML = `
+        <div class="film-media">
+          ${media}
+          <span class="zoom-badge">${fmtZoom(f.zoom)}</span>
+          ${overlay}
+        </div>
+        <div class="film-info">
+          <h3>${f.title}</h3>
+          <p class="fractal">${f.fractal || ""}</p>
+          <p class="blurb">${f.blurb || ""}</p>
+          <p class="coords"><b>Re</b> ${trim(f.re)} &nbsp; <b>Im</b> ${trim(f.im)}<br>
+             <b>zoom</b> ${fmtZoom(f.zoom)} &nbsp;·&nbsp; <b>cycles</b> ${f.cycles ?? "—"}</p>
+        </div>`;
+
+      if (hasVideo) {
+        el.querySelector(".play").addEventListener("click", () => {
+          const m = el.querySelector(".film-media");
+          const id = encodeURIComponent(f.youtube);
+          m.innerHTML =
+            `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+                     title="${f.title}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+        });
+      }
+      return el;
+    }
+
+    fetch("../../assets/films/films.json")
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then((data) => {
+        const films = (data.films || []).filter((f) => f && f.title);
+        const root = document.getElementById("films");
+        root.innerHTML = "";
+        if (!films.length) { root.innerHTML = '<p class="empty">No films yet.</p>'; return; }
+        films.forEach((f) => root.appendChild(card(f)));
+      })
+      .catch((e) => {
+        document.getElementById("films").innerHTML =
+          `<p class="error">Couldn't load the film catalogue (${e.message}). If you opened this file directly, serve it over http (e.g. <code>python3 -m http.server</code>).</p>`;
+      });
+  </script>
+</body>
+</html>

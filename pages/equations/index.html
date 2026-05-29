@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!--
+  PLACEHOLDER PAGE.
+  The author will draft the real content in Markdown (LaTeX- and image-friendly)
+  and later ask for a prettify pass. Intended future pipeline: Markdown → HTML
+  with KaTeX for the formulas. For now this is just a styled "coming soon".
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Mathematics — Math Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+  <style>
+    .topic.fractals { --accent: #6cc6ff; }
+    .doc-head { padding: 8px 0 clamp(28px, 5vh, 52px); }
+    .doc-head h1 {
+      font-family: var(--display); font-weight: 340;
+      font-size: clamp(40px, 7vw, 80px); line-height: 0.96;
+      letter-spacing: -0.02em; margin-top: 14px;
+    }
+    .doc-head h1 em { font-style: italic; color: var(--accent); font-weight: 340; }
+    .draft-note {
+      display: inline-flex; align-items: center; gap: 11px;
+      margin-top: 22px; padding: 11px 16px;
+      border: 1px solid var(--line-2); border-radius: 4px;
+      background: rgba(255,255,255,0.015);
+      font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.04em; color: var(--fg-soft);
+    }
+    .draft-note .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 80%, transparent);
+      animation: pulse 2.4s var(--ease) infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent); }
+      70%  { box-shadow: 0 0 0 10px transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+    @media (prefers-reduced-motion: reduce) { .draft-note .dot { animation: none; } }
+
+    .outline { margin: clamp(36px, 6vh, 64px) 0; }
+    .outline-item {
+      display: grid; grid-template-columns: 64px 1fr; gap: 22px;
+      padding: 26px 0; border-top: 1px solid var(--line);
+    }
+    .outline-item:last-child { border-bottom: 1px solid var(--line); }
+    .outline-item .n { font-family: var(--mono); color: var(--faint); font-size: 14px; }
+    .outline-item h2 {
+      font-family: var(--display); font-weight: 360; font-size: 26px;
+      letter-spacing: -0.01em; margin-bottom: 6px;
+    }
+    .outline-item p { color: var(--fg-soft); max-width: 58ch; }
+    .outline-item .eq {
+      display: inline-block; margin-top: 12px; padding: 6px 12px;
+      border: 1px solid var(--line-2); border-radius: 4px;
+      background: rgba(255,255,255,0.015);
+      font-family: var(--mono); font-size: 14px; color: var(--fg);
+    }
+    .outline-item .eq b { color: var(--accent); }
+  </style>
+</head>
+<body class="topic fractals">
+  <div class="shell">
+    <a class="back" href="../../index.html"><span class="arrow">←</span> Math Gallery</a>
+
+    <header class="doc-head">
+      <p class="eyebrow">Collection I — Fractals · Notes</p>
+      <h1>The mathematics of <em>z² + c</em></h1>
+      <p class="draft-note"><span class="dot"></span> Draft in progress — full write-up coming soon.</p>
+    </header>
+
+    <p style="max-width:60ch;color:var(--fg-soft);">
+      A proper account of how these images are computed is being written. It will cover the
+      escape-time algorithm, the smooth-coloring used throughout the gallery, and the
+      multi-precision and perturbation tricks that make the deepest zooms possible. A preview
+      of the outline:
+    </p>
+
+    <section class="outline">
+      <div class="outline-item">
+        <span class="n">01</span>
+        <div>
+          <h2>The iteration</h2>
+          <p>Why a single quadratic map, iterated from zero, draws a boundary of endless detail —
+             and what "bounded orbit" means in the complex plane.</p>
+          <span class="eq">z<sub>n+1</sub> = z<sub>n</sub><b>²</b> + c</span>
+        </div>
+      </div>
+      <div class="outline-item">
+        <span class="n">02</span>
+        <div>
+          <h2>Escape-time &amp; smooth coloring</h2>
+          <p>Turning "how fast did the orbit escape" into color, and the renormalized
+             iteration count that removes the banding.</p>
+          <span class="eq">ν = n + 1 − log<sub>2</sub>(log<b>|</b>z<sub>n</sub><b>|</b>)</span>
+        </div>
+      </div>
+      <div class="outline-item">
+        <span class="n">03</span>
+        <div>
+          <h2>Precision &amp; perturbation</h2>
+          <p>Where ordinary <code>double</code> precision fails near zoom 10¹⁴, and how a single
+             high-precision reference orbit plus cheap per-pixel deltas pushes far deeper.</p>
+          <span class="eq">z<sub>n</sub> = Z<sub>n</sub> + δ<sub>n</sub>,&nbsp; δ<sub>n+1</sub> = <b>2</b>Z<sub>n</sub>δ<sub>n</sub> + δ<sub>n</sub>² + δc</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="colophon">
+      <span>Notes accompany the <a href="../mandelbrot/index.html">interactive viewer</a>.</span>
+      <span><a href="../../index.html">← back to the gallery</a></span>
+    </footer>
+  </div>
+</body>
+</html>

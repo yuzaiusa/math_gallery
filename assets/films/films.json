@@ -1,0 +1,38 @@
+{
+  "_comment": "Deep-dive film catalogue. To add a film: (1) upload it to YouTube, (2) drop a short muted-loop preview .mp4 in this folder, (3) add an object below. No code changes needed. Set \"youtube\" to the 11-char video id; leave \"\" to show preview-only. \"preview\" is optional.",
+  "films": [
+    {
+      "title": "Seahorse Valley",
+      "fractal": "Mandelbrot set",
+      "youtube": "",
+      "preview": "../../assets/films/seahorse_preview.mp4",
+      "re": "-0.748548706415072803150",
+      "im": "0.100524966248010897607",
+      "zoom": 3e16,
+      "cycles": 2.65,
+      "blurb": "A descent into the seahorse-tailed filaments threading the cleft between the main cardioid and the period-2 bulb — self-similar spirals all the way down."
+    },
+    {
+      "title": "From Elephant Valley to a Pod",
+      "fractal": "Mandelbrot set",
+      "youtube": "",
+      "preview": "",
+      "re": "0.298290194404088",
+      "im": "0.018602495751172",
+      "zoom": 3e10,
+      "cycles": 2.4,
+      "blurb": "Out along the elephant-trunk valley on the cardioid's right flank, marching through herds of trunks toward a hidden mini-Mandelbrot pod."
+    },
+    {
+      "title": "Always Connected",
+      "fractal": "Mandelbrot set",
+      "youtube": "",
+      "preview": "../../assets/films/connected_preview.mp4",
+      "re": "-0.743643887037151",
+      "im": "0.131825904205330",
+      "zoom": 1e6,
+      "cycles": 2.0,
+      "blurb": "However thin the filaments grow, the set never breaks apart — a visual meditation on Douady & Hubbard's theorem that the Mandelbrot set is connected."
+    }
+  ]
+}
