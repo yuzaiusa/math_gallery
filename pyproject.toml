@@ -7,7 +7,7 @@ name = "mg-movie"
 version = "0.1.0"
 description = "Math Gallery: native fractal rendering core + deep-zoom movie CLI"
 requires-python = ">=3.9"
-dependencies = ["numpy>=1.21"]
+dependencies = ["numpy>=1.21", "pillow>=10.1"]
 
 [project.scripts]
 mg-movie = "mg_movie.cli:main"

@@ -124,6 +124,7 @@ Key options (`mg-movie --help` for the full list):
 | `--precision` | auto | force `f64`/`dd`/`qd` (disables perturbation) |
 | `--crf` | `18` | x264 quality (lower = better) |
 | `--workers` | CPU count | render thread pool size |
+| `--title` | none | overlay a lower-third caption (title + center + zoom) |
 
 ### Quick local module build (no install)
 

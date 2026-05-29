@@ -5,6 +5,7 @@ pool and piped as raw RGB to ffmpeg. The color mapping mirrors the browser
 viewer's colorMap (cube-root spread + cyclic HSL).
 """
 import argparse
+import math
 import os
 import shutil
 import subprocess
@@ -14,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal, getcontext
 
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 try:
     import mg_core
@@ -89,6 +91,90 @@ def colorize(smooth, max_iter, cycles):
     return np.clip(np.round(rgb * 255.0), 0, 255).astype(np.uint8)
 
 
+# --- Lower-third caption overlay -------------------------------------------
+
+_FONT_CANDIDATES = [
+    "/System/Library/Fonts/Helvetica.ttc",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+]
+_SUP = str.maketrans("0123456789-", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻")
+
+
+def load_font(size):
+    """A sans-serif TrueType font at `size` px; falls back to Pillow's bundled
+    scalable default (>=10.1) if no system font is found."""
+    for path in _FONT_CANDIDATES:
+        try:
+            return ImageFont.truetype(path, size)
+        except OSError:
+            continue
+    return ImageFont.load_default(size=size)
+
+
+def fmt_zoom(z):
+    """Scientific magnitude, e.g. 1e6 -> "×1.0×10⁶"."""
+    exp = math.floor(math.log10(z)) if z > 0 else 0
+    mant = z / (10.0 ** exp)
+    return f"×{mant:.1f}×10{str(exp).translate(_SUP)}"
+
+
+def displayed_zoom(zooms, i, frames, fps):
+    """Zoom shown on frame `i`: ticks once per second (every `fps` frames) so
+    the number doesn't flicker, and snaps to the exact end on the last frame."""
+    if i >= frames - 1:
+        return zooms[-1]
+    return zooms[min((i // fps) * fps, frames - 1)]
+
+
+def make_overlay(title, cre_dec, cim_dec, zoom_end, w, h):
+    """Build a per-frame lower-third drawer. The title, center coordinates, fonts
+    and geometry are fixed up front; the returned `draw(frame, zoom_str)` only
+    stamps the changing zoom line. iMovie "line lower third" look: white text +
+    accent line with a soft drop shadow, anchored lower-left."""
+    pad = max(8, h // 25)
+    title_font = load_font(max(12, h // 22))
+    body_font = load_font(max(10, h // 28))
+    shadow = max(1, h // 400)
+
+    decimals = max(6, math.ceil(math.log10(zoom_end)) + 3) if zoom_end > 1 else 6
+    coords = f"Re {cre_dec:+.{decimals}f}   Im {cim_dec:+.{decimals}f}"
+
+    # Vertical stack measured from a probe so we can anchor to the bottom edge.
+    probe = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+
+    def text_h(font):
+        b = probe.textbbox((0, 0), "Xg", font=font)
+        return b[3] - b[1]
+
+    th, bh = text_h(title_font), text_h(body_font)
+    gap = max(2, h // 120)
+    line_y_off = th + gap                       # baseline area for the accent line
+    coords_y_off = line_y_off + gap + 2
+    zoom_y_off = coords_y_off + bh + gap // 2
+    block_h = zoom_y_off + bh
+    top = h - pad - block_h
+    line_w = max(probe.textlength(title, font=title_font),
+                 probe.textlength(coords, font=body_font))
+
+    def text(d, xy, s, font):
+        x, y = xy
+        d.text((x + shadow, y + shadow), s, font=font, fill=(0, 0, 0))
+        d.text((x, y), s, font=font, fill=(255, 255, 255))
+
+    def draw(frame, zoom_str):
+        img = Image.fromarray(frame)
+        d = ImageDraw.Draw(img)
+        text(d, (pad, top), title, title_font)
+        ly = top + line_y_off
+        d.rectangle([pad, ly, pad + line_w, ly + 1], fill=(255, 255, 255))
+        text(d, (pad, top + coords_y_off), coords, body_font)
+        text(d, (pad, top + zoom_y_off), f"Zoom  {zoom_str}", body_font)
+        return np.asarray(img)
+
+    return draw
+
+
 def build_parser():
     p = argparse.ArgumentParser(
         prog="mg-movie",
@@ -114,6 +200,8 @@ def build_parser():
     p.add_argument("--julia-im", type=float, default=0.745)
     p.add_argument("--crf", type=int, default=18, help="x264 quality (lower=better)")
     p.add_argument("--workers", type=int, default=os.cpu_count() or 4)
+    p.add_argument("--title", default=None,
+                   help="if set, overlay a lower-third caption (title + center + zoom)")
     return p
 
 
@@ -140,7 +228,11 @@ def main(argv=None):
     # the supported fractals, unless the user pinned a precision tier.
     perturb_ok = args.fractal in PERTURB_FRACTALS and forced is None
 
-    def render_one(zoom):
+    overlay = (make_overlay(args.title, cre_dec, cim_dec, args.zoom_end, w, h)
+               if args.title is not None else None)
+
+    def render_one(idx):
+        zoom = zooms[idx]
         re_w = INITIAL_RE_WIDTH / zoom
         if perturb_ok and zoom > PERTURB_MIN_ZOOM:
             im_h = re_w * h / w
@@ -153,7 +245,11 @@ def main(argv=None):
             smooth = mg_core.render_frame(
                 fractal, prec, rmin, rmax, imin, imax, w, h,
                 args.max_iter, args.escape_r2, args.degree, args.julia_re, args.julia_im)
-        return colorize(smooth, args.max_iter, args.cycles).tobytes()
+        frame = colorize(smooth, args.max_iter, args.cycles)
+        if overlay is not None:
+            frame = overlay(frame, fmt_zoom(
+                displayed_zoom(zooms, idx, args.frames, args.fps)))
+        return frame.tobytes()
 
     cmd = [ffmpeg, "-y", "-loglevel", "error",
            "-f", "rawvideo", "-pixel_format", "rgb24",
@@ -174,7 +270,7 @@ def main(argv=None):
             submit_idx = 0
             for done in range(args.frames):
                 while submit_idx < args.frames and len(pending) < window:
-                    pending.append(ex.submit(render_one, zooms[submit_idx]))
+                    pending.append(ex.submit(render_one, submit_idx))
                     submit_idx += 1
                 proc.stdin.write(pending.popleft().result())
                 if (done + 1) % 10 == 0 or done + 1 == args.frames:
