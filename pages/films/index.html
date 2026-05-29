@@ -17,7 +17,7 @@
       font-size: clamp(40px, 7vw, 78px); line-height: 0.96;
       letter-spacing: -0.02em; margin-top: 14px;
     }
-    .page-head .lede { margin-top: 18px; max-width: 56ch; color: var(--fg-soft); }
+    .page-head .lede { margin-top: 18px; max-width: 60ch; color: var(--fg-soft); }
 
     .films {
       display: grid;
@@ -89,21 +89,19 @@
       font-family: var(--display); font-weight: 360;
       font-size: 25px; letter-spacing: -0.01em;
     }
-    .film-info .fractal {
-      font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em;
-      text-transform: uppercase; color: var(--accent); margin: 3px 0 10px;
+    .film-info .blurb { color: var(--fg-soft); font-size: 16.5px; max-width: 52ch; margin-top: 6px; }
+    .params {
+      margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: auto 1fr; gap: 5px 16px;
+      font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
     }
-    .film-info .blurb { color: var(--fg-soft); font-size: 16.5px; max-width: 52ch; }
-    .film-info .coords {
-      margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line);
-      font-family: var(--mono); font-size: 11.5px; color: var(--muted);
-      line-height: 1.8; word-break: break-word;
-    }
-    .film-info .coords b { color: var(--fg-soft); font-weight: 500; }
+    .params dt { color: var(--muted); text-transform: lowercase; letter-spacing: 0.04em; }
+    .params dd { color: var(--fg-soft); word-break: break-all; }
+    .params dd.accent { color: var(--accent); }
 
     .empty, .error {
       font-family: var(--mono); font-size: 13px; color: var(--muted);
-      padding: 40px 0;
+      padding: 40px 0; grid-column: 1 / -1;
     }
   </style>
 </head>
@@ -116,7 +114,8 @@
       <h1>Deep-dive films</h1>
       <p class="lede">Rendered journeys into the boundary of the Mandelbrot set — each frame
         computed by the same C++ core that powers the live viewer, then encoded frame-by-frame
-        into a continuous dive. Tap a plate to watch the full film.</p>
+        into a continuous dive. Each 10× zoom-in journey is covered by 5 seconds in the movies.
+        Tap a plate to watch the full film.</p>
     </header>
 
     <main id="films" class="films" aria-live="polite">
@@ -133,27 +132,31 @@
     const SUP = { "-": "⁻", "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹" };
     const sup = (s) => String(s).split("").map((c) => SUP[c] || c).join("");
     function fmtZoom(z) {
+      z = Number(z);
       if (!isFinite(z) || z <= 0) return "—";
       const exp = Math.floor(Math.log10(z));
       const mant = z / Math.pow(10, exp);
       return exp >= 3 ? `×${mant.toFixed(1)}×10${sup(exp)}` : `×${Math.round(z).toLocaleString()}`;
     }
-    const trim = (s, n = 15) => {
-      const str = String(s);
-      const neg = str.startsWith("-");
-      const digits = str.replace("-", "").replace(".", "").replace(/^0+/, "").length;
-      return digits > n ? (neg ? "−" : "") + str.replace("-", "").slice(0, n + 2) + "…" : str.replace("-", "−");
+    const minus = (s) => String(s).replace("-", "−");
+    const ytId = (url) => {
+      const m = String(url || "").match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+      return m ? m[1] : "";
     };
+    const previewSrc = (file) =>
+      file ? `../../assets/films/${file.replace(/\.mp4$/i, "")}_preview.mp4` : "";
 
     function card(f) {
       const el = document.createElement("article");
       el.className = "film";
-      const hasVideo = !!f.youtube;
-      const media = f.preview
-        ? `<video src="${f.preview}" muted loop autoplay playsinline preload="metadata"></video>`
+      const id = ytId(f.url);
+      const preview = previewSrc(f.file);
+      const media = preview
+        ? `<video src="${preview}" muted loop autoplay playsinline preload="metadata"
+                  onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',textContent:'preview unavailable'}))"></video>`
         : `<div class="placeholder">render in progress</div>`;
-      const overlay = hasVideo
-        ? `<button class="play" aria-label="Watch ${f.title}"><span class="disc"></span><span class="label">Watch film</span></button>`
+      const overlay = id
+        ? `<button class="play" aria-label="Watch ${f.name}"><span class="disc"></span><span class="label">Watch film</span></button>`
         : `<button class="play" disabled><span class="disc"></span><span class="label">Film coming soon</span></button>`;
 
       el.innerHTML = `
@@ -163,29 +166,32 @@
           ${overlay}
         </div>
         <div class="film-info">
-          <h3>${f.title}</h3>
-          <p class="fractal">${f.fractal || ""}</p>
-          <p class="blurb">${f.blurb || ""}</p>
-          <p class="coords"><b>Re</b> ${trim(f.re)} &nbsp; <b>Im</b> ${trim(f.im)}<br>
-             <b>zoom</b> ${fmtZoom(f.zoom)} &nbsp;·&nbsp; <b>cycles</b> ${f.cycles ?? "—"}</p>
+          <h3>${f.name || "Untitled"}</h3>
+          <p class="blurb">${f.text || ""}</p>
+          <dl class="params">
+            <dt>fractal</dt><dd class="accent">${f.fractal || "—"}</dd>
+            <dt>Re</dt><dd>${minus(f.re)}</dd>
+            <dt>Im</dt><dd>${minus(f.im)}</dd>
+            <dt>zoom</dt><dd>${fmtZoom(f.zoom)}</dd>
+            <dt>cycles</dt><dd>${f.cycles ?? "—"}</dd>
+            <dt>maxIter</dt><dd>${f.maxiter ?? "—"}</dd>
+          </dl>
         </div>`;
 
-      if (hasVideo) {
+      if (id) {
         el.querySelector(".play").addEventListener("click", () => {
-          const m = el.querySelector(".film-media");
-          const id = encodeURIComponent(f.youtube);
-          m.innerHTML =
+          el.querySelector(".film-media").innerHTML =
             `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
-                     title="${f.title}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+                     title="${f.name}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
         });
       }
       return el;
     }
 
-    fetch("../../assets/films/films.json")
+    fetch("../../movies/points.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then((data) => {
-        const films = (data.films || []).filter((f) => f && f.title);
+        const films = (Array.isArray(data) ? data : data.films || []).filter((f) => f && f.name);
         const root = document.getElementById("films");
         root.innerHTML = "";
         if (!films.length) { root.innerHTML = '<p class="empty">No films yet.</p>'; return; }
