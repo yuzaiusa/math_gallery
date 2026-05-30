@@ -43,5 +43,20 @@
     "preview_end_second": 7,
     "text": "However thin the filaments grow, the set never breaks apart — a visual meditation on Douady & Hubbard's theorem that the Mandelbrot set is connected.",
     "url": "https://youtu.be/VTMZVbN-cOs"
+  },
+  {
+    "id": 4,
+    "name": "Infinite Spiral Arms",
+    "fractal": "mandelbrot",
+    "re": "-0.0865257304639651",
+    "im": "0.6555118821366410",
+    "zoom": 1e12,
+    "maxiter": 4096,
+    "cycles": 3,
+    "file": "infinite_spiral_arms.mp4",
+    "preview_start_second": 2,
+    "preview_end_second": 7,
+    "text": "A descent into the triple-spiral country off the cardioid's upper cusp, where each arm unwinds into a smaller arm, and that one into another — staircases of whirlpools that keep turning long after the eye loses count.",
+    "url": "https://youtu.be/Z9lH-mv0mNI"
   }
 ]
