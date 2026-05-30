@@ -54,7 +54,7 @@
                 <span class="desc">WebAssembly · f64 / dd / qd</span></a></li>
               <li><a class="link" href="pages/films/index.html">
                 <span class="arrow">→</span><span class="name">Deep-dive films</span>
-                <span class="desc">3 dives</span></a></li>
+                <span class="desc" id="films-count">dives</span></a></li>
               <li><a class="link" href="pages/equations/index.html">
                 <span class="arrow">→</span><span class="name">The mathematics</span>
                 <span class="desc">draft</span></a></li>
@@ -104,5 +104,16 @@
   <script src="assets/heroes.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="assets/mathtex.js"></script>
+  <script>
+    // Keep the "N dives" count in sync with the films catalogue.
+    fetch("movies/points.json")
+      .then((r) => r.json())
+      .then((d) => {
+        const n = (Array.isArray(d) ? d : d.films || []).filter((f) => f && f.name).length;
+        const el = document.getElementById("films-count");
+        if (el && n) el.textContent = `${n} ${n === 1 ? "dive" : "dives"}`;
+      })
+      .catch(() => {});
+  </script>
 </body>
 </html>
