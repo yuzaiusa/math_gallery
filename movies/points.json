@@ -58,5 +58,35 @@
     "preview_end_second": 39,
     "text": "A descent into the triple-spiral country off the cardioid's upper cusp, where each arm unwinds into a smaller arm, and that one into another — staircases of whirlpools that keep turning long after the eye loses count.",
     "url": "https://youtu.be/Z9lH-mv0mNI"
+  },
+  {
+    "id": 5,
+    "name": "Hidden Bulb at a Junction",
+    "fractal": "mandelbrot",
+    "re": "-1.2481924796090687256549151047",
+    "im": "0.0631436522379384615874168929",
+    "zoom": 2.7e23,
+    "maxiter": 81920,
+    "cycles": 2.1,
+    "file": "hidden_bulb_at_a_junction.mp4",
+    "preview_start_second": 35,
+    "preview_end_second": 40,
+    "text": "Down the slender antenna west of the period-2 bulb to a crossroads of filaments — branches radiating outward like a starburst — where, folded into the very center of the junction, hides a tiny perfect copy of the whole Mandelbrot set.",
+    "url": "https://youtu.be/cQhkRfV6kuE"
+  },
+  {
+    "id": 6,
+    "name": "From Multi-Line to Tri-attractors",
+    "fractal": "mandelbrot",
+    "re": "-0.750140081923445806",
+    "im": "0.010248232024543849",
+    "zoom": 1.5e13,
+    "maxiter": 81920,
+    "cycles": 1.6,
+    "file": "multiline_to_tri_attractors.mp4",
+    "preview_start_second": 30,
+    "preview_end_second": 35,
+    "text": "Into the narrow neck where the main cardioid meets the period-2 bulb, where filaments crowd together by the thousand, until the tangle unwinds into three radiant foci — a trio of attracting centers the branches spiral around without end.",
+    "url": "https://youtu.be/rwonsTny7h8"
   }
 ]
