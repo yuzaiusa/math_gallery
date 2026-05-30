@@ -222,6 +222,18 @@ a { color: inherit; text-decoration: none; }
 .equation b { color: var(--accent); font-weight: 500; }
 .plate-body p { color: var(--fg-soft); max-width: 46ch; }
 
+/* KaTeX-rendered display equation — a textbook callout, not a code box */
+.eqn {
+  margin: 20px 0 18px;
+  padding-left: 16px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 55%, var(--line-2));
+  color: var(--fg);
+  overflow-x: auto;
+}
+.eqn .katex-display { margin: 0; text-align: left; }
+.eqn .katex-display > .katex { text-align: left; white-space: normal; }
+.eqn .katex { font-size: 1.15em; }
+
 /* arrow sub-link list */
 .links { list-style: none; margin: 22px 0 0; }
 .links li { border-top: 1px solid var(--line); }

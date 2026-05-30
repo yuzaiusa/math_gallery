@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="../../assets/site.css">
   <style>
     .topic.fractals { --accent: #6cc6ff; }
@@ -54,13 +55,8 @@
       letter-spacing: -0.01em; margin-bottom: 6px;
     }
     .outline-item p { color: var(--fg-soft); max-width: 58ch; }
-    .outline-item .eq {
-      display: inline-block; margin-top: 12px; padding: 6px 12px;
-      border: 1px solid var(--line-2); border-radius: 4px;
-      background: rgba(255,255,255,0.015);
-      font-family: var(--mono); font-size: 14px; color: var(--fg);
-    }
-    .outline-item .eq b { color: var(--accent); }
+    .outline-item .eqn { margin: 14px 0 0; }
+    .doc-head h1 .katex { font-size: 1em; }   /* inline math scales with the title */
   </style>
 </head>
 <body class="topic fractals">
@@ -69,7 +65,7 @@
 
     <header class="doc-head">
       <p class="eyebrow">Collection I — Fractals · Notes</p>
-      <h1>The mathematics of <em>z² + c</em></h1>
+      <h1>The mathematics of <em data-tex="z^2 + c">z² + c</em></h1>
       <p class="draft-note"><span class="dot"></span> Draft in progress — full write-up coming soon.</p>
     </header>
 
@@ -87,7 +83,7 @@
           <h2>The iteration</h2>
           <p>Why a single quadratic map, iterated from zero, draws a boundary of endless detail —
              and what "bounded orbit" means in the complex plane.</p>
-          <span class="eq">z<sub>n+1</sub> = z<sub>n</sub><b>²</b> + c</span>
+          <div class="eqn" data-display data-tex="z_{n+1} = z_n^2 + c">z_{n+1} = z_n² + c</div>
         </div>
       </div>
       <div class="outline-item">
@@ -96,7 +92,7 @@
           <h2>Escape-time &amp; smooth coloring</h2>
           <p>Turning "how fast did the orbit escape" into color, and the renormalized
              iteration count that removes the banding.</p>
-          <span class="eq">ν = n + 1 − log<sub>2</sub>(log<b>|</b>z<sub>n</sub><b>|</b>)</span>
+          <div class="eqn" data-display data-tex="\nu = n + 1 - \log_2\!\left(\log|z_n|\right)">ν = n + 1 − log₂(log|z_n|)</div>
         </div>
       </div>
       <div class="outline-item">
@@ -105,7 +101,7 @@
           <h2>Precision &amp; perturbation</h2>
           <p>Where ordinary <code>double</code> precision fails near zoom 10¹⁴, and how a single
              high-precision reference orbit plus cheap per-pixel deltas pushes far deeper.</p>
-          <span class="eq">z<sub>n</sub> = Z<sub>n</sub> + δ<sub>n</sub>,&nbsp; δ<sub>n+1</sub> = <b>2</b>Z<sub>n</sub>δ<sub>n</sub> + δ<sub>n</sub>² + δc</span>
+          <div class="eqn" data-display data-tex="z_n = Z_n + \delta_n, \quad \delta_{n+1} = 2Z_n\delta_n + \delta_n^2 + \delta c">z_n = Z_n + δ_n, δ_{n+1} = 2Z_n δ_n + δ_n² + δc</div>
         </div>
       </div>
     </section>
@@ -115,5 +111,7 @@
       <span><a href="../../index.html">← back to the gallery</a></span>
     </footer>
   </div>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="../../assets/mathtex.js"></script>
 </body>
 </html>

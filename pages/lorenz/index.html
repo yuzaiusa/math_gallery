@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="../../assets/site.css">
   <style>
     .topic.chaos { --accent: #f2b15c; }
@@ -25,13 +26,6 @@
       letter-spacing: -0.02em; margin: 8px 0 6px;
     }
     .lz .latin { font-style: italic; color: var(--muted); font-size: 18px; }
-    .lz .equation {
-      display: inline-block; margin: 20px 0 18px; padding: 8px 14px;
-      border: 1px solid var(--line-2); border-radius: 4px;
-      background: rgba(255,255,255,0.015);
-      font-family: var(--mono); font-size: 14px; color: var(--fg);
-    }
-    .lz .equation b { color: var(--accent); }
     .lz p.body { color: var(--fg-soft); max-width: 48ch; }
     .lz .tag { margin-bottom: 14px; }
   </style>
@@ -54,7 +48,7 @@
         <p class="eyebrow">Collection II — Chaos</p>
         <h1>The Lorenz Attractor</h1>
         <p class="latin">deterministic, yet unpredictable</p>
-        <p class="equation">ẋ = σ(y−x),&nbsp; ẏ = x(ρ−z)−y,&nbsp; ż = xy−<b>β</b>z</p>
+        <div class="eqn" data-display data-tex="\dot{x} = \sigma(y-x),\quad \dot{y} = x(\rho-z)-y,\quad \dot{z} = xy-\beta z">ẋ = σ(y−x), ẏ = x(ρ−z)−y, ż = xy−βz</div>
         <p class="body">Edward Lorenz's 1963 model of atmospheric convection is the textbook
           strange attractor: every trajectory is trapped on this butterfly forever, yet two
           starts a hair apart drift into entirely different futures. The live sketch at left
@@ -69,5 +63,7 @@
     </footer>
   </div>
   <script src="../../assets/heroes.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="../../assets/mathtex.js"></script>
 </body>
 </html>

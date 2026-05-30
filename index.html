@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;0,9..144,380;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
@@ -41,7 +42,7 @@
             <p class="figno">No. 01</p>
             <h2>The Mandelbrot Set</h2>
             <p class="latin">the set of c for which the orbit of 0 stays bounded</p>
-            <p class="equation">z<sub>n+1</sub> = z<sub>n</sub><b>²</b> + c,&nbsp;&nbsp;z<sub>0</sub> = 0</p>
+            <div class="eqn" data-display data-tex="z_{n+1} = z_n^2 + c, \quad z_0 = 0">z_{n+1} = z_n² + c,  z_0 = 0</div>
             <p>Infinite structure from a single quadratic rule. Pan and zoom through the
               boundary in real time — Julia, Multibrot, Tricorn and Burning Ship included —
               with multi-precision arithmetic and perturbation theory carrying the deep dives
@@ -79,7 +80,7 @@
             <p class="figno">No. 02</p>
             <h2>The Lorenz Attractor</h2>
             <p class="latin">a trajectory that never repeats and never escapes</p>
-            <p class="equation">ẋ = σ(y−x),&nbsp; ẏ = x(ρ−z)−y,&nbsp; ż = xy−<b>β</b>z</p>
+            <div class="eqn" data-display data-tex="\dot{x} = \sigma(y-x),\quad \dot{y} = x(\rho-z)-y,\quad \dot{z} = xy-\beta z">ẋ = σ(y−x), ẏ = x(ρ−z)−y, ż = xy−βz</div>
             <p>Three simple equations for convection rolls — and the birth of chaos theory.
               Nearby starts diverge exponentially, yet the path is forever trapped on a
               butterfly-shaped attractor. A full interactive page is in the workshop.</p>
@@ -101,5 +102,7 @@
 
   </div>
   <script src="assets/heroes.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="assets/mathtex.js"></script>
 </body>
 </html>
