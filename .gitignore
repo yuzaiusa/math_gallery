@@ -20,6 +20,8 @@ pages/mandelbrot/wasm/core.wasm
 frames/
 # ...except the small committed web preview loops for the film gallery
 !assets/films/*.mp4
+# ...and the committed hero background clips
+!assets/heroes/*.mp4
 
 # Editor / OS
 .DS_Store

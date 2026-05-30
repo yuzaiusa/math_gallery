@@ -223,6 +223,23 @@
     });
   }
 
+  /* ----------------------------------------------------------------------- *
+   *  VIDEO heroes — a looping clip (e.g. a boomerang dive) used in place of a
+   *  live canvas. Plays only while on-screen; under reduced motion it holds a
+   *  static first frame instead of animating.
+   * ----------------------------------------------------------------------- */
+  function mountVideos() {
+    document.querySelectorAll("video[data-hero-video]").forEach((v) => {
+      v.muted = true; v.loop = true; v.playsInline = true;
+      if (REDUCED) return;                       // leave paused on its first frame
+      const io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) v.play().catch(() => {});
+        else v.pause();
+      }, { threshold: 0.05 });
+      io.observe(v);
+    });
+  }
+
   /* ----------------------------------------------------------------------- */
   const HEROES = { mandelbrot, lorenz };
   function mount() {
@@ -230,6 +247,7 @@
       const fn = HEROES[c.dataset.hero];
       if (fn) try { fn(c); } catch (e) { console.error("hero failed:", c.dataset.hero, e); }
     });
+    mountVideos();
   }
   if (document.readyState === "loading")
     document.addEventListener("DOMContentLoaded", mount);
