@@ -114,8 +114,8 @@
     "maxiter": 4096,
     "cycles": 1.8,
     "file": "what_happens_at_the_boundary.mp4",
-    "preview_start_second": 34,
-    "preview_end_second": 39,
+    "preview_start_second": 154,
+    "preview_end_second": 159,
     "text": "Out along the real antenna to its very tip at c = −2, where the set narrows to an infinitely thin filament — yet however far you push in, the boundary never falls quiet, unfurling one more tiny Mandelbrot at the end of the needle.",
     "url": "https://youtu.be/88_uMsFnYgY"
   }
