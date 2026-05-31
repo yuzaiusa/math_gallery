@@ -1,6 +1,21 @@
 [
   {
     "id": 1,
+    "name": "Self Similarity",
+    "fractal": "mandelbrot",
+    "re": "-1.4011551453",
+    "im": "0",
+    "zoom": 1e7,
+    "maxiter": 81920,
+    "cycles": 2,
+    "file": "self_similarity.mp4",
+    "preview_start_second": 5,
+    "preview_end_second": 10,
+    "text": "A plunge toward the Feigenbaum point, c ≈ −1.401, where the period-doubling cascade crowds against its limit — and at every depth the whole set reprints itself, each mini-Mandelbrot nested inside the last, without end.",
+    "url": "https://youtu.be/LvC2o0TBxxI"
+  },
+  {
+    "id": 2,
     "name": "Seahorse Valley",
     "fractal": "mandelbrot",
     "re": "-0.748548706415072803150",
@@ -15,7 +30,7 @@
     "url": "https://youtu.be/HI7p6k_pDJk"
   },
   {
-    "id": 2,
+    "id": 3,
     "name": "From Elephant Valley to Pod",
     "fractal": "mandelbrot",
     "re": "0.298290194404088",
@@ -30,7 +45,7 @@
     "url": "https://youtu.be/bJJukwkrbV4"
   },
   {
-    "id": 3,
+    "id": 4,
     "name": "Always Connected",
     "fractal": "mandelbrot",
     "re": "-1.86117698663641411723",
@@ -45,7 +60,7 @@
     "url": "https://youtu.be/VTMZVbN-cOs"
   },
   {
-    "id": 4,
+    "id": 5,
     "name": "Infinite Spiral Arms",
     "fractal": "mandelbrot",
     "re": "-0.0865257304639651",
@@ -60,7 +75,7 @@
     "url": "https://youtu.be/Z9lH-mv0mNI"
   },
   {
-    "id": 5,
+    "id": 6,
     "name": "Hidden Bulb at a Junction",
     "fractal": "mandelbrot",
     "re": "-1.2481924796090687256549151047",
@@ -75,7 +90,7 @@
     "url": "https://youtu.be/cQhkRfV6kuE"
   },
   {
-    "id": 6,
+    "id": 7,
     "name": "From Multi-Line to Tri-attractors",
     "fractal": "mandelbrot",
     "re": "-0.750140081923445806",
@@ -88,5 +103,20 @@
     "preview_end_second": 35,
     "text": "Into the narrow neck where the main cardioid meets the period-2 bulb, where filaments crowd together by the thousand, until the tangle unwinds into three radiant foci — a trio of attracting centers the branches spiral around without end.",
     "url": "https://youtu.be/rwonsTny7h8"
+  },
+  {
+    "id": 8,
+    "name": "What Happens at the Boundary?",
+    "fractal": "mandelbrot",
+    "re": "-1.9999999999999999486368966404788114990",
+    "im": "0",
+    "zoom": 1e33,
+    "maxiter": 4096,
+    "cycles": 1.8,
+    "file": "what_happens_at_the_boundary.mp4",
+    "preview_start_second": 34,
+    "preview_end_second": 39,
+    "text": "Out along the real antenna to its very tip at c = −2, where the set narrows to an infinitely thin filament — yet however far you push in, the boundary never falls quiet, unfurling one more tiny Mandelbrot at the end of the needle.",
+    "url": "https://youtu.be/88_uMsFnYgY"
   }
 ]
