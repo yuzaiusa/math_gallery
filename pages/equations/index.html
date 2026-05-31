@@ -1,117 +1,452 @@
 <!DOCTYPE html>
-<!--
-  PLACEHOLDER PAGE.
-  The author will draft the real content in Markdown (LaTeX- and image-friendly)
-  and later ask for a prettify pass. Intended future pipeline: Markdown → HTML
-  with KaTeX for the formulas. For now this is just a styled "coming soon".
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Mathematics — Math Gallery</title>
+  <title>The Mathematics of the Mandelbrot Set - Math Gallery</title>
+  <meta name="description" content="How the Mandelbrot set works: dynamics, escape, bifurcation, connectedness, hyperbolic components, and how the viewer renders it.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;0,9..144,380;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="../../assets/site.css">
-  <style>
-    .topic.fractals { --accent: #6cc6ff; }
-    .doc-head { padding: 8px 0 clamp(28px, 5vh, 52px); }
-    .doc-head h1 {
-      font-family: var(--display); font-weight: 340;
-      font-size: clamp(40px, 7vw, 80px); line-height: 0.96;
-      letter-spacing: -0.02em; margin-top: 14px;
-    }
-    .doc-head h1 em { font-style: italic; color: var(--accent); font-weight: 340; }
-    .draft-note {
-      display: inline-flex; align-items: center; gap: 11px;
-      margin-top: 22px; padding: 11px 16px;
-      border: 1px solid var(--line-2); border-radius: 4px;
-      background: rgba(255,255,255,0.015);
-      font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.04em; color: var(--fg-soft);
-    }
-    .draft-note .dot {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 80%, transparent);
-      animation: pulse 2.4s var(--ease) infinite;
-    }
-    @keyframes pulse {
-      0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent); }
-      70%  { box-shadow: 0 0 0 10px transparent; }
-      100% { box-shadow: 0 0 0 0 transparent; }
-    }
-    @media (prefers-reduced-motion: reduce) { .draft-note .dot { animation: none; } }
-
-    .outline { margin: clamp(36px, 6vh, 64px) 0; }
-    .outline-item {
-      display: grid; grid-template-columns: 64px 1fr; gap: 22px;
-      padding: 26px 0; border-top: 1px solid var(--line);
-    }
-    .outline-item:last-child { border-bottom: 1px solid var(--line); }
-    .outline-item .n { font-family: var(--mono); color: var(--faint); font-size: 14px; }
-    .outline-item h2 {
-      font-family: var(--display); font-weight: 360; font-size: 26px;
-      letter-spacing: -0.01em; margin-bottom: 6px;
-    }
-    .outline-item p { color: var(--fg-soft); max-width: 58ch; }
-    .outline-item .eqn { margin: 14px 0 0; }
-    .doc-head h1 .katex { font-size: 1em; }   /* inline math scales with the title */
-  </style>
+  <link rel="stylesheet" href="../../assets/article.css">
 </head>
 <body class="topic fractals">
   <div class="shell">
-    <a class="back" href="../../index.html"><span class="arrow">←</span> Math Gallery</a>
-
-    <header class="doc-head">
-      <p class="eyebrow">Collection I — Fractals · Notes</p>
-      <h1>The mathematics of <em data-tex="z^2 + c">z² + c</em></h1>
-      <p class="draft-note"><span class="dot"></span> Draft in progress — full write-up coming soon.</p>
-    </header>
-
-    <p style="max-width:60ch;color:var(--fg-soft);">
-      A proper account of how these images are computed is being written. It will cover the
-      escape-time algorithm, the smooth-coloring used throughout the gallery, and the
-      multi-precision and perturbation tricks that make the deepest zooms possible. A preview
-      of the outline:
-    </p>
-
-    <section class="outline">
-      <div class="outline-item">
-        <span class="n">01</span>
-        <div>
-          <h2>The iteration</h2>
-          <p>Why a single quadratic map, iterated from zero, draws a boundary of endless detail —
-             and what "bounded orbit" means in the complex plane.</p>
-          <div class="eqn" data-display data-tex="z_{n+1} = z_n^2 + c">z_{n+1} = z_n² + c</div>
-        </div>
-      </div>
-      <div class="outline-item">
-        <span class="n">02</span>
-        <div>
-          <h2>Escape-time &amp; smooth coloring</h2>
-          <p>Turning "how fast did the orbit escape" into color, and the renormalized
-             iteration count that removes the banding.</p>
-          <div class="eqn" data-display data-tex="\nu = n + 1 - \log_2\!\left(\log|z_n|\right)">ν = n + 1 − log₂(log|z_n|)</div>
-        </div>
-      </div>
-      <div class="outline-item">
-        <span class="n">03</span>
-        <div>
-          <h2>Precision &amp; perturbation</h2>
-          <p>Where ordinary <code>double</code> precision fails near zoom 10¹⁴, and how a single
-             high-precision reference orbit plus cheap per-pixel deltas pushes far deeper.</p>
-          <div class="eqn" data-display data-tex="z_n = Z_n + \delta_n, \quad \delta_{n+1} = 2Z_n\delta_n + \delta_n^2 + \delta c">z_n = Z_n + δ_n, δ_{n+1} = 2Z_n δ_n + δ_n² + δc</div>
-        </div>
-      </div>
-    </section>
-
+    <a class="back" href="../../index.html"><span class="arrow">&larr;</span> Math Gallery</a>
+    <article class="article">
+      <p class="eyebrow">Collection I - Fractals · Notes</p>
+      <h1 id="the-mandelbrot-set">The Mandelbrot Set</h1>
+      <blockquote>
+      <p><strong>The whole object in one sentence.</strong> Take the rule \(z \mapsto z^2 + c\), start
+      from \(z = 0\), and ask a single yes/no question: <em>does the orbit stay bounded?</em>
+      The set of complex numbers \(c\) for which the answer is <strong>yes</strong> is the
+      Mandelbrot set — and that one question carries an entire universe of structure.</p>
+      </blockquote>
+      <p><strong>Contents</strong></p>
+      <ol>
+      <li><a href="#1-a-short-history">A short history</a></li>
+      <li><a href="#2-reading-the-picture">Reading the picture</a></li>
+      <li><a href="#3-the-dynamics-squaring-escape-and-periodicity">The dynamics: squaring, escape, and periodicity</a></li>
+      <li><a href="#4-from-iteration-to-the-bifurcation-diagram">From iteration to the bifurcation diagram</a></li>
+      <li><a href="#5-why-the-set-is-connected--and-the-mlc-conjecture">Why the set is connected — and the MLC conjecture</a></li>
+      <li><a href="#6-hyperbolic-components-and-the-density-of-hyperbolicity">Hyperbolic components and the density of hyperbolicity</a></li>
+      <li><a href="#7-fun-facts-self-similarity-and-fractal-dimension">Fun facts: self-similarity and fractal dimension</a></li>
+      <li><a href="#8-how-the-viewer-colors-the-set">How the viewer colors the set</a></li>
+      <li><a href="#9-how-the-viewer-zooms-so-deep-perturbation-theory">How the viewer zooms so deep: perturbation theory</a></li>
+      </ol>
+      <hr />
+      <h2 id="1-a-short-history">1. A short history</h2>
+      <p>The set is defined by the simplest nonlinear map imaginable — a square plus a
+      constant — yet nobody drew it until computers could. The first known picture is a
+      1978 rendering by <strong>Robert Brooks</strong> and <strong>Peter Matelski</strong>, who stumbled onto it
+      while studying Kleinian groups; it is a coarse ASCII-style plot, but the cardioid
+      and the main bulb are already there.</p>
+      <p>In 1980, <strong>Benoit B. Mandelbrot</strong>, working at IBM's Thomas J. Watson Research
+      Center, produced the first detailed computer visualizations while exploring the
+      <em>parameter space</em> of the quadratic family \(z^2 + c\). His images revealed the
+      filaments, the satellites, and the endless boundary detail. Mandelbrot's 1982
+      book <em>The Fractal Geometry of Nature</em> turned “fractal” into a household word.</p>
+      <p>The rigorous mathematics came from <strong>Adrien Douady</strong> and <strong>John H. Hubbard</strong>.
+      Their <em>Étude dynamique des polynômes complexes</em> (the “Orsay notes,” 1982–1985)
+      laid the analytic foundation: they <strong>proved the set is connected</strong>, introduced the
+      machinery of <em>external rays</em> and the <em>uniformizing map</em>, organized the bulbs by
+      rotation number, and — crucially — <strong>named the set after Mandelbrot</strong>. It is
+      Douady who is usually credited with the name <em>“ensemble de Mandelbrot.”</em> Almost
+      everything in the sections below is, in one way or another, their framework.</p>
+      <hr />
+      <h2 id="2-reading-the-picture">2. Reading the picture</h2>
+      <p>Formally,</p>
+      <p>\[\mathcal{M} = \Big\{\, c \in \mathbb{C} \;:\; \text{the orbit } 0,\; f_c(0),\; f_c^2(0),\dots \text{ stays bounded} \,\Big\},
+      \qquad f_c(z) = z^2 + c .\]</p>
+      <p>Everything you see is a <em>map of parameters</em> \(c\), <strong>not</strong> a shape in the variable
+      \(z\). Each pixel is a different dynamical system, colored by how its orbit behaves.</p>
+      <figure><img alt="The Mandelbrot set and its named regions" src="figures/01_regions.png" /><figcaption>The Mandelbrot set and its named regions</figcaption></figure>
+      <p>The landmarks worth knowing:</p>
+      <ul>
+      <li><strong>Main cardioid</strong> — the big heart-shaped body. These are the \(c\) for which
+        \(f_c\) has an <em>attracting fixed point</em>. Its boundary is the curve
+        \(c(\varphi) = \tfrac{1}{2}e^{i\varphi} - \tfrac{1}{4}e^{2i\varphi}\), with the
+        <strong>cusp</strong> at \(c = \tfrac14\).</li>
+      <li><strong>Period-2 bulb</strong> — the disk of radius \(\tfrac14\) centered at \(c=-1\). Here the
+        attracting orbit is a 2-cycle.</li>
+      <li><strong>Bulbs / decorations</strong> — every bump on the cardioid is a <em>hyperbolic
+        component</em> with its own attracting cycle; they are indexed by a rotation number
+        \(p/q\) (§3).</li>
+      <li><strong>Antenna / needle</strong> — the spike running left along the real axis, ending at the
+        <strong>tip</strong> \(c = -2\).</li>
+      <li><strong>Seahorse valley</strong> (the cleft near \(c \approx -0.75\) where the cardioid meets
+        the period-2 bulb) and <strong>elephant valley</strong> (the parade of trunks on the
+        cardioid's right flank near \(c \approx 0.28\)) — informal names for two of the
+        most photogenic neighborhoods.</li>
+      <li><strong>Mini-Mandelbrots (satellites)</strong> — tiny near-perfect copies of the whole set,
+        scattered along the filaments (§7).</li>
+      </ul>
+      <hr />
+      <h2 id="3-the-dynamics-squaring-escape-and-periodicity">3. The dynamics: squaring, escape, and periodicity</h2>
+      <h3 id="the-map-one-step-at-a-time">The map, one step at a time</h3>
+      <p>Write a complex number in polar form, \(z = r\,e^{i\theta}\). Squaring it does two
+      very clean things:</p>
+      <p>\[z^2 = r^2 \, e^{i\,2\theta} \qquad\Longrightarrow\qquad
+      \underbrace{r \to r^2}_{\text{modulus is squared}},\quad
+      \underbrace{\theta \to 2\theta}_{\text{angle is doubled}} .\]</p>
+      <p>Then the map adds \(c\), which simply <strong>translates</strong> the point. So each iteration of
+      \(z \mapsto z^2 + c\) is <em>“square, then shift.”</em></p>
+      <figure><img alt="One iteration: square (double the angle, square the modulus), then add c" src="figures/02_squaring_map.png" /><figcaption>One iteration: square (double the angle, square the modulus), then add c</figcaption></figure>
+      <p>That picture explains a lot at a glance:</p>
+      <ul>
+      <li>Points with \(r < 1\) are pulled <strong>toward the origin</strong> by squaring; points with
+        \(r > 1\) are flung <strong>outward</strong>, and fast (a number of modulus \(10\) becomes
+        \(100\), then \(10^4\)…). The unit circle \(r=1\) is the knife-edge, where squaring
+        becomes the pure <strong>angle-doubling map</strong> \(\theta \to 2\theta\) — already a
+        textbook example of chaos.</li>
+      </ul>
+      <h3 id="the-escape-criterion-and-the-bailout-radius-2">The escape criterion and the bailout radius 2</h3>
+      <p>Once an orbit gets large, the squaring term overwhelms the shift and the orbit
+      runs away to infinity. Precisely: if \(|z| > 2\) and \(|z| \ge |c|\), then</p>
+      <p>\[|f_c(z)| = |z^2 + c| \;\ge\; |z|^2 - |c| \;\ge\; |z|^2 - |z| \;=\; |z|\,(|z| - 1) \;>\; |z|,\]</p>
+      <p>and since the growth factor \((|z|-1) > 1\) keeps compounding, \(|z^n| \to \infty\).
+      Because every \(c \in \mathcal{M}\) satisfies \(|c| \le 2\), the rule is simply:</p>
+      <blockquote>
+      <p><strong>The orbit of \(0\) escapes if and only if it ever exceeds \(|z| = 2\).</strong></p>
+      </blockquote>
+      <p>This is the <strong>bailout radius</strong> the renderer watches for, and the <strong>escape time</strong>
+      (how many steps until \(|z| > 2\)) is what gets turned into color in §8.</p>
+      <figure><img alt="Orbits: bounded vs escaping, and why c = −2 is the tip" src="figures/03_orbits.png" /><figcaption>Orbits: bounded vs escaping, and why c = −2 is the tip</figcaption></figure>
+      <p>A few orbits make the boundary cases concrete:</p>
+      <ul>
+      <li>\(c = 0\): the orbit is \(0 \to 0 \to \cdots\) — a fixed point. Bounded.</li>
+      <li>\(c = -1\): \(0 \to -1 \to 0 \to -1 \to \cdots\) — a <strong>2-cycle</strong>. Bounded (this is
+        the center of the period-2 bulb).</li>
+      <li>\(c = -2\): \(0 \to -2 \to 2 \to 2 \to \cdots\) — it lands <em>exactly</em> on \(2\) and
+        stays. Bounded, but only just: this is the <strong>tip</strong> of the antenna. Nudge it to
+        \(c = -2.01\) and the orbit escapes.</li>
+      <li>\(c = 0.3\): escapes immediately.</li>
+      </ul>
+      <h3 id="attracting-fixed-points-and-the-main-cardioid">Attracting fixed points and the main cardioid</h3>
+      <p>What makes the <em>interior</em> of \(\mathcal{M}\) interesting is <strong>attracting orbits</strong>.
+      The simplest are <strong>fixed points</strong> — values left unmoved by the map, \(f_c(z)=z\):</p>
+      <p>\[z^2 - z + c = 0 \qquad\Longrightarrow\qquad z_\pm = \frac{1 \pm \sqrt{1-4c}}{2} .\]</p>
+      <p>So there are (generically) <strong>two</strong> fixed points. Whether one of them <em>attracts</em>
+      nearby orbits is decided by the <strong>multiplier</strong> \(\lambda = f_c'(z) = 2z\):</p>
+      <p>\[\lambda_\pm = 1 \pm \sqrt{1-4c}, \qquad \lambda_+ + \lambda_- = 2 .\]</p>
+      <p>Because the two multipliers always <strong>sum to \(2\)</strong>, their average is \(1\) — sitting
+      right on the unit circle — so they cannot both lie strictly inside it. <strong>At most
+      one fixed point can be attracting</strong> (call it the \(\alpha\) point; the other,
+      \(\beta\), is repelling and anchors the filaments).</p>
+      <p>The attracting fixed point exists exactly while \(|\lambda| < 1\), and it loses
+      stability on the boundary \(|\lambda| = 1\). Putting \(\lambda = e^{i\varphi}\) and
+      using \(c = z - z^2 = \tfrac{\lambda}{2} - \tfrac{\lambda^2}{4}\) traces out
+      precisely the <strong>main cardioid</strong> promised in §2:</p>
+      <p>\[c(\varphi) = \frac{e^{i\varphi}}{2} - \frac{e^{2i\varphi}}{4}, \qquad 0 \le \varphi < 2\pi .\]</p>
+      <p>Three points on it deserve names:</p>
+      <ul>
+      <li><strong>\(c = 0\)</strong> — here \(\lambda = 0\), so \(z = 0\) is <em>super-attracting</em> (orbits
+        collapse onto it at once). This is the <strong>center</strong>, or nucleus, of the cardioid.</li>
+      <li><strong>\(c = \tfrac14\)</strong> — here \(1 - 4c = 0\), the two fixed points <strong>collide</strong> into one
+        with \(\lambda = 1\). This is the <strong>cusp</strong>: the rightmost point, where the fixed
+        point is first born in a tangent (saddle-node) bifurcation.</li>
+      <li><strong>\(c = -\tfrac34\)</strong> — here \(\lambda = -1\). The fixed point survives but turns
+        marginally unstable, and this is exactly where the next region attaches.</li>
+      </ul>
+      <h3 id="the-period-2-bulb-exactly">The period-2 bulb, exactly</h3>
+      <p>Cross \(c = -\tfrac34\) and the attracting fixed point hands off to an attracting
+      <strong>2-cycle</strong> — a pair \(\{z_1, z_2\}\) with \(f_c(z_1) = z_2\) and \(f_c(z_2) = z_1\).
+      Both satisfy \(f_c^2(z) = z\), which is a <strong>degree-4</strong> equation:</p>
+      <p>\[f_c^2(z) - z = (z^2 + c)^2 + c - z = 0 .\]</p>
+      <p>But the two <em>fixed</em> points also solve \(f_c^2(z) = z\) (a fixed point is trivially a
+      2-cycle), so the fixed-point factor \(z^2 - z + c\) <strong>divides</strong> this quartic. Pulling
+      it out leaves a tidy quadratic for the genuine 2-cycle:</p>
+      <p>\[f_c^2(z) - z = \underbrace{(z^2 - z + c)}_{\text{fixed points}}\;
+      \underbrace{(z^2 + z + c + 1)}_{\text{the 2-cycle}},
+      \qquad
+      z_{1,2} = \frac{-1 \pm \sqrt{-3 - 4c}}{2} .\]</p>
+      <p>The cycle's stability comes from the <strong>chain rule around the loop</strong>:
+      \(\lambda_2 = (f_c^2)'(z_1) = f_c'(z_1)\,f_c'(z_2) = 4\,z_1 z_2\). Vieta's formula on
+      \(z^2 + z + (c+1)\) gives \(z_1 z_2 = c + 1\), so</p>
+      <p>\[\lambda_2 = 4(c + 1), \qquad\text{attracting} \iff |\lambda_2| < 1 \iff |c + 1| < \tfrac14 .\]</p>
+      <p>That inequality is exactly the <strong>disk of radius \(\tfrac14\) centered at \(c = -1\)</strong> —
+      the <strong>period-2 bulb</strong>. It is super-attracting at its center \(c = -1\)
+      (\(\lambda_2 = 0\)) and rooted at \(c = -\tfrac34\) (\(\lambda_2 = 1\)), meeting the
+      cardioid right where we left off.</p>
+      <h3 id="higher-periods">Higher periods</h3>
+      <p>The same idea climbs. Period-\(k\) points solve \(f_c^k(z) = z\), a polynomial of
+      degree \(2^k\). Cycles whose period <em>divides</em> \(k\) also solve it and factor out,
+      leaving the <em>primitive</em> period-\(k\) points. Period 3, for instance, gives degree
+      \(2^3 = 8\); removing the two fixed points leaves degree \(6\) — the <strong>two</strong> distinct
+      3-cycles. A cycle's multiplier is again the product around the loop,
+      \(\lambda_k = \prod_i f_c'(z_i) = 2^k\, z_1 z_2 \cdots z_k\), and the attracting
+      region is \(|\lambda_k| < 1\), centered at the <strong>super-attracting</strong> parameter where
+      the critical point \(0\) itself lands on the cycle (i.e. \(f_c^k(0) = 0\)).</p>
+      <p>Unlike periods 1 and 2, there is <strong>no closed form</strong> for \(k \ge 3\) — the degree
+      \(2^k\) explodes — so those cycles, and the centers of their bulbs and
+      mini-Mandelbrots, are found numerically. Each such attracting region is one of the
+      bulbs studding the set.</p>
+      <h3 id="periodicity-the-period-2-bulb-and-the-rational-bulbs">Periodicity, the period-2 bulb, and the rational bulbs</h3>
+      <p>These higher-period bulbs hang off the main cardioid in a strikingly orderly way.
+      A bulb attaches at the cardioid point whose fixed-point multiplier is a <strong>root of
+      unity</strong>, \(\lambda = e^{2\pi i\, p/q}\), and the bulb growing there carries an
+      attracting <strong>period-\(q\)</strong> cycle. The fraction \(p/q\) is the bulb's <strong>rotation
+      number</strong> — it even tells you how the \(q\) filaments of its antenna are permuted at
+      each step.</p>
+      <figure><img alt="Bulbs on the cardioid carry a rotation number p/q" src="figures/04_bulbs_rational.png" /><figcaption>Bulbs on the cardioid carry a rotation number p/q</figcaption></figure>
+      <p>Two beautiful consequences:</p>
+      <ul>
+      <li>The biggest bulb is \(1/2\) — the <strong>period-2 bulb</strong> at \(c=-1\). Next come \(1/3\) and
+        \(2/3\) (period 3), then \(1/4, 2/5, \dots\) — smaller as \(q\) grows.</li>
+      <li>Between the bulbs \(p_1/q_1\) and \(p_2/q_2\), the <strong>largest</strong> bulb in the gap sits
+        at the <strong>Farey mediant</strong> \(\dfrac{p_1 + p_2}{q_1 + q_2}\). The rationals organize
+        the entire boundary.</li>
+      </ul>
+      <hr />
+      <h2 id="4-from-iteration-to-the-bifurcation-diagram">4. From iteration to the bifurcation diagram</h2>
+      <h3 id="a-short-detour-the-logistic-map">A short detour: the logistic map</h3>
+      <p>Before the link to chaos theory, meet its most famous toy model. The <strong>logistic
+      map</strong></p>
+      <p>\[x_{n+1} = r\, x_n(1 - x_n), \qquad x_n \in [0, 1],\]</p>
+      <p>was popularized by Robert May (1976) as a model of a population that grows at rate
+      \(r\) but is held back by crowding. Iterate it — feed each year's population back in
+      — and ask what value (or values) the population <em>settles into</em> as \(n \to \infty\).
+      The answer, plotted against \(r\), is one of the iconic pictures of nonlinear
+      science.</p>
+      <figure><img alt="The logistic map's period-doubling bifurcation diagram" src="figures/05a_logistic.png" /><figcaption>The logistic map's period-doubling bifurcation diagram</figcaption></figure>
+      <ul>
+      <li>For \(1 < r < 3\) there is a single attracting <strong>fixed point</strong> \(x^{*} = 1 - 1/r\)
+        (with multiplier \(2 - r\)): the population settles to one value.</li>
+      <li>At <strong>\(r = 3\)</strong> the multiplier reaches \(-1\) and the fixed point <strong>period-doubles</strong>
+        — the population now alternates between <strong>two</strong> values. This is the <strong>first</strong>
+        bifurcation.</li>
+      <li>That 2-cycle is stable until <strong>\(r = 1 + \sqrt{6} \approx 3.449\)</strong>, where it
+        doubles again to a <strong>4-cycle</strong> — the <strong>second</strong> bifurcation. Then $8, 16, 32,
+        \dots$, the gaps shrinking by the universal <strong>Feigenbaum constant</strong>
+        \(\delta \approx 4.6692\) and accumulating at \(r_\infty \approx 3.5699\).</li>
+      <li>Past \(r_\infty\) the orbit never repeats — <strong>chaos</strong> — but the chaos is shot
+        through with <strong>windows</strong> of sudden order, where a stable cycle reappears out of
+        nowhere. The widest is the <strong>period-3 window</strong> opening at
+        \(r = 1 + 2\sqrt{2} \approx 3.828\) (its existence is the famous <em>“period three
+        implies chaos,”</em> Li &amp; Yorke 1975). At \(r = 4\) the map is fully chaotic.</li>
+      </ul>
+      <h3 id="the-mandelbrot-set-on-the-real-axis-is-the-same-diagram">The Mandelbrot set on the real axis is the <em>same</em> diagram</h3>
+      <p>Now restrict the Mandelbrot map \(z \mapsto z^2 + c\) to <strong>real</strong> \(c\) and real \(z\). A
+      real quadratic is a real quadratic: \(x \mapsto x^2 + c\) and the logistic map are
+      <strong>affinely conjugate</strong> — identical dynamics in different coordinates. The parameter
+      dictionary is exact:</p>
+      <p>\[c = \frac{r}{2} - \frac{r^2}{4},
+      \qquad\text{equivalently}\qquad
+      r = 1 + \sqrt{1 - 4c}.\]</p>
+      <p>It carries the logistic range \(r \in [1, 4]\) onto \(c \in [-2,\ \tfrac14]\) —
+      <strong>precisely the real slice of the Mandelbrot set.</strong> So the spike of \(\mathcal{M}\)
+      along the real axis <em>is</em> the logistic bifurcation diagram, re-drawn in the
+      parameter \(c\).</p>
+      <figure><img alt="The real slice of M is the same period-doubling cascade" src="figures/05_bifurcation.png" /><figcaption>The real slice of M is the same period-doubling cascade</figcaption></figure>
+      <p>Every landmark maps straight over:</p>
+      <table>
+      <thead>
+      <tr>
+      <th>logistic \(r\)</th>
+      <th>Mandelbrot \(c\)</th>
+      <th>event</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>\(3\)</td>
+      <td>\(-\tfrac34\)</td>
+      <td>fixed point → 2-cycle (cardioid → period-2 bulb)</td>
+      </tr>
+      <tr>
+      <td>\(1+\sqrt6 \approx 3.449\)</td>
+      <td>\(-\tfrac54\)</td>
+      <td>2-cycle → 4-cycle</td>
+      </tr>
+      <tr>
+      <td>\(r_\infty \approx 3.570\)</td>
+      <td>\(c_\infty \approx -1.401\)</td>
+      <td>Feigenbaum point (onset of chaos)</td>
+      </tr>
+      <tr>
+      <td>\(1+2\sqrt2 \approx 3.828\)</td>
+      <td>\(-1.75\)</td>
+      <td>period-3 window</td>
+      </tr>
+      <tr>
+      <td>\(4\)</td>
+      <td>\(-2\)</td>
+      <td>fully chaotic (the antenna tip)</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>The rows of bulbs marching down the antenna are exactly the period-\(2^k\) cascade,
+      drawn in the complex plane.</p>
+      <h3 id="do-the-windows-correspond-to-the-satellite-bulbs">Do the windows correspond to the satellite bulbs?</h3>
+      <p><strong>Yes — they are the very same objects.</strong> A periodic window in the 1-D logistic
+      diagram and a satellite <strong>mini-Mandelbrot</strong> in the 2-D plane don't merely
+      “correspond”: the window is the <strong>real cross-section</strong> of the satellite.</p>
+      <p>Here is why. Inside a window, three things happen in sequence — a <strong>tangent
+      (saddle-node) bifurcation</strong> abruptly creates an attracting period-\(k\) cycle; that
+      cycle runs its <strong>own period-doubling cascade</strong>; then it dissolves back into chaos.
+      Read in the complex plane, that is exactly the anatomy of a mini-Mandelbrot: the
+      tangent bifurcation is the <strong>cusp of the satellite's little cardioid</strong>, the
+      sub-cascade is the satellite's own string of <strong>bulbs</strong>, and the window's chaos is
+      the satellite's own antenna. The period-3 window at \(r \approx 3.828\) <em>is</em> the big
+      mini-Mandelbrot at \(c = -1.75\).</p>
+      <p>So <strong>each window is a miniature copy of the whole bifurcation diagram</strong>, because
+      each satellite is a miniature copy of the whole Mandelbrot set — the phenomenon of
+      <strong>renormalization</strong> (Douady–Hubbard), and the same self-similarity we return to in
+      §7. The only real difference is dimension: the satellite is the full 2-D object
+      adrift in the complex plane, while its window is just the 1-D slit where it happens
+      to cross the real axis.</p>
+      <hr />
+      <h2 id="5-why-the-set-is-connected--and-the-mlc-conjecture">5. Why the set is connected — and the MLC conjecture</h2>
+      <p>Looking at the picture, you might guess the satellites are separate islands. They
+      are <strong>not</strong>: in 1982 <strong>Douady and Hubbard proved \(\mathcal{M}\) is connected</strong> —
+      every piece is joined to the main body by filaments, some far too thin to see.</p>
+      <h3 id="the-uniformizing-map">The uniformizing map</h3>
+      <p>Their proof is a gem. For \(c\) <em>outside</em> \(\mathcal{M}\), the map \(f_c\) is, near
+      infinity, conformally the same as the pure squaring map \(w \mapsto w^2\); the change
+      of coordinates is the <strong>Böttcher map</strong> \(\varphi_c\). Evaluating it at the critical
+      value defines</p>
+      <p>\[\Phi:\ \mathbb{C}\setminus\mathcal{M}\ \longrightarrow\ \mathbb{C}\setminus\overline{\mathbb{D}},
+      \qquad
+      \Phi(c) = \varphi_c(c) = \lim_{n\to\infty}\big(f_c^{\,n}(0)\big)^{1/2^n},\]</p>
+      <p>and Douady–Hubbard show \(\Phi\) is a <strong>conformal isomorphism</strong>: it maps the outside
+      of the Mandelbrot set one-to-one and angle-preservingly onto the outside of the
+      <strong>closed unit disk</strong>.</p>
+      <figure><img alt="Φ maps the complement of M onto the complement of the unit disk" src="figures/06_conformal.png" /><figcaption>Φ maps the complement of M onto the complement of the unit disk</figcaption></figure>
+      <p>Because the complement of \(\mathcal{M}\) is conformally just the exterior of a disk
+      — which is connected and has no holes — <strong>\(\mathcal{M}\) itself must be connected</strong>
+      (and “full,” i.e. it traps no bubbles of exterior). The same map hands us two
+      tools the renderer quietly uses:</p>
+      <ul>
+      <li>the <strong>potential</strong> (Green's function) \(G(c) = \log|\Phi(c)|\), whose level sets are
+        the <strong>equipotentials</strong> drawn above (and which the smooth escape-time coloring of
+        §8 approximates);</li>
+      <li>the <strong>external rays</strong> \(\arg \Phi(c) = 2\pi\theta\), which land on the boundary and
+        give \(\partial\mathcal{M}\) its combinatorial address book.</li>
+      </ul>
+      <h3 id="mlc">MLC</h3>
+      <p>The big open question is <strong>MLC — “the Mandelbrot set is Locally Connected.”</strong> If
+      true, Carathéodory's theorem says the inverse map \(\Phi^{-1}\) extends <em>continuously</em>
+      to the boundary circle, so <strong>every external ray lands at a well-defined point</strong> and
+      \(\mathcal{M}\) becomes homeomorphic to an explicit combinatorial model (Douady's
+      “pinched disk”). In short, MLC would give a <strong>complete topological blueprint</strong> of
+      the set — and, as a bonus, it would <strong>imply the density of hyperbolicity</strong> (§6) in
+      the quadratic family. <strong>Jean-Christophe Yoccoz</strong> proved MLC at every
+      finitely-renormalizable parameter; the infinitely-renormalizable case remains open.
+      It is one of the central problems of complex dynamics.</p>
+      <hr />
+      <h2 id="6-hyperbolic-components-and-the-density-of-hyperbolicity">6. Hyperbolic components and the density of hyperbolicity</h2>
+      <p>A <strong>hyperbolic component</strong> is a connected piece of the <em>interior</em> of \(\mathcal{M}\)
+      on which \(f_c\) has an attracting cycle of some fixed period. The cardioid (period
+      1), the bulbs (period \(q\)), and the little cardioid of <em>every</em> mini-Mandelbrot are
+      all hyperbolic components. Each one is, internally, as tidy as a disk: the
+      <strong>multiplier map</strong> \(\lambda : U \to \mathbb{D}\) is a conformal isomorphism, with</p>
+      <ul>
+      <li>a <strong>center</strong> where \(\lambda = 0\) — the <em>superattracting</em> parameter, where the
+        critical orbit is exactly periodic (the “nucleus” the deep-zoom films aim for);</li>
+      <li>a <strong>root</strong> where \(\lambda = 1\) — the parabolic point where the component is
+        bolted onto its parent.</li>
+      </ul>
+      <h3 id="the-density-of-hyperbolicity-conjecture">The density of hyperbolicity conjecture</h3>
+      <p>Here is the picture to hold in your head. \(\mathcal{M}\) is one connected object;
+      its bulbs and satellites are all stitched together by filaments; the <strong>interior</strong>
+      is (conjecturally) <em>nothing but</em> these hyperbolic components — regions of calm,
+      attracting dynamics — while all the chaos lives on the razor-thin <strong>boundary</strong>
+      \(\partial\mathcal{M}\).</p>
+      <p>That “nothing but” is the <strong>density of hyperbolicity conjecture</strong> (Fatou's
+      conjecture): the parameters with an attracting cycle are <strong>dense</strong> in the whole
+      parameter plane. A set is <em>dense</em> when every point is a limit of it — so this says
+      that <strong>arbitrarily close to <em>any</em> \(c\)</strong>, even one buried in the chaotic boundary,
+      there is a nearby \(c'\) whose dynamics is simple and attracting. Equivalently: the
+      interior of \(\mathcal{M}\) has no exotic (“queer,” non-hyperbolic) components.</p>
+      <p>If it holds, the “computable, well-behaved” maps are as common as can be, and the
+      quadratic family is, in a precise sense, <em>tame</em>. It is <strong>proved for real
+      parameters</strong> (Graczyk–Świątek and Lyubich, 1997) but <strong>open over \(\mathbb{C}\)</strong> —
+      and it would follow from MLC.</p>
+      <hr />
+      <h2 id="7-fun-facts-self-similarity-and-fractal-dimension">7. Fun facts: self-similarity and fractal dimension</h2>
+      <p><strong>Mini-Mandelbrots everywhere.</strong> Zoom into the filaments and you keep finding tiny,
+      slightly-distorted copies of the entire set.</p>
+      <figure><img alt="A baby Mandelbrot deep on the antenna" src="figures/07_selfsimilar.png" /><figcaption>A baby Mandelbrot deep on the antenna</figcaption></figure>
+      <p>The set is not <em>exactly</em> self-similar like a Koch snowflake; it is
+      <strong>quasi-self-similar</strong>, and the copies are explained by Douady–Hubbard's theory of
+      <strong>renormalization</strong>. Near a <em>Misiurewicz point</em> (a preperiodic parameter) the set
+      is even asymptotically self-similar — and, by a theorem of <strong>Tan Lei</strong>, locally
+      looks like the <em>Julia set</em> at that same \(c\).</p>
+      <p><strong>A boundary of dimension 2.</strong> The crinkliness has a number attached: in 1991
+      <strong>Mitsuhiro Shishikura</strong> proved the <strong>Hausdorff dimension of \(\partial\mathcal{M}\)
+      is exactly \(2\)</strong> — the maximum possible for a curve in the plane. The boundary is,
+      in a rigorous sense, as rough as a one-dimensional thing can be.</p>
+      <p>A few more:</p>
+      <ul>
+      <li>\(\mathcal{M}\) is <strong>compact</strong> and sits inside the disk \(|c| \le 2\).</li>
+      <li>Its <strong>area</strong> is finite, \(\approx 1.5065\) (numerically).</li>
+      <li>It is <strong>connected</strong> (proved) and <strong>conjectured locally connected</strong> (MLC).</li>
+      <li>Despite the dimension-2 boundary, that boundary is conjectured to have
+        Lebesgue <strong>measure zero</strong> — all the “area” is in the bulbs.</li>
+      </ul>
+      <hr />
+      <h2 id="8-how-the-viewer-colors-the-set">8. How the viewer colors the set</h2>
+      <p>Points <em>inside</em> \(\mathcal{M}\) are painted <strong>black</strong>. Points outside are colored by
+      <strong>how fast they escaped</strong> — but with two refinements that make the bands melt into
+      smooth gradients.</p>
+      <p><strong>Smooth escape time.</strong> A raw integer escape count produces hard contour bands
+      (left, below). The renderer instead uses the <strong>normalized</strong> (renormalized) escape
+      count, which interpolates <em>between</em> iterations:</p>
+      <p>\[\nu \;=\; n + 1 - \log_2\!\big(\log |z_n|\big),\]</p>
+      <p>evaluated at the first \(n\) with \(|z_n|\) past the bailout. (This \(\nu\) is essentially
+      the escape <strong>potential</strong> \(G(c)\) from §5, which is why the coloring traces the
+      equipotentials.)</p>
+      <figure><img alt="The cyclic smooth-escape color scheme" src="figures/08_colorscheme.png" /><figcaption>The cyclic smooth-escape color scheme</figcaption></figure>
+      <p><strong>Cube-root spread + cyclic hue.</strong> Most exterior pixels escape <em>quickly</em>, so the
+      small-\(\nu\) values are crowded; the renderer spreads them out with a cube root and
+      then wraps a cyclic hue around them:</p>
+      <p>\[t = \left(\frac{\nu}{\text{maxIter}-1}\right)^{1/3},
+      \qquad
+      \text{hue} = \operatorname{frac}\!\big(t \cdot \texttt{cycles}\big),\]</p>
+      <p>mapped through a six-segment HSL→RGB wheel. The <strong><code>cycles</code></strong> control sets how many
+      times the palette repeats from the boundary outward — the knob behind the candy
+      striping in the deep-zoom films. (This exact mapping lives in the viewer's
+      <code>colorMap</code>, the CLI's <code>colorize</code>, and the landing-page hero shader, so all three
+      agree pixel-for-pixel.)</p>
+      <hr />
+      <h2 id="9-how-the-viewer-zooms-so-deep-perturbation-theory">9. How the viewer zooms so deep: perturbation theory</h2>
+      <p>Naively, every pixel iterates its own \(c\). That breaks down twice as you zoom in:
+      the arithmetic gets slow at high precision, <strong>and</strong> — more subtly — around zoom
+      \(\sim 10^{14}\) the per-pixel coordinate, computed in ordinary <code>double</code>, can no
+      longer tell neighboring pixels apart, so the image collapses.</p>
+      <p><strong>Perturbation theory</strong> fixes both at once. Iterate <strong>one</strong> high-precision
+      <strong>reference orbit</strong> \(Z_n\) from the view center \(C\), and write every other pixel as a
+      small deviation \(z_n = Z_n + \delta_n\). Subtracting the two recurrences, the
+      per-pixel part evolves in fast ordinary precision:</p>
+      <p>\[\delta_{n+1} \;=\; 2\,Z_n\,\delta_n + \delta_n^2 + \delta c,
+      \qquad \delta c = c - C .\]</p>
+      <p>Only \(C\) and its orbit \(Z_n\) need many digits; the offsets \(\delta\) stay tiny and
+      double precision is plenty. This removes the \(10^{14}\) wall and is dramatically
+      faster than per-pixel high precision.</p>
+      <p>The full derivation — including the escape test in perturbed coordinates, glitch
+      detection and reference <strong>rebasing</strong>, and the (deferred) <strong>series approximation</strong> —
+      is written up separately in <strong><a href="../perturbation/index.html"><code>../perturbation.md</code></a></strong>.</p>
+    </article>
     <footer class="colophon">
-      <span>Notes accompany the <a href="../mandelbrot/index.html">interactive viewer</a>.</span>
-      <span><a href="../../index.html">← back to the gallery</a></span>
+      <span>Notes accompany the interactive viewer.</span>
+      <span><a href="../../index.html">&larr; back to the gallery</a></span>
     </footer>
   </div>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-  <script defer src="../../assets/mathtex.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!window.renderMathInElement) return;
+      renderMathInElement(document.querySelector(".article"), {
+        delimiters: [
+          { left: "\\[", right: "\\]", display: true },
+          { left: "\\(", right: "\\)", display: false },
+        ],
+        throwOnError: false,
+      });
+    });
+  </script>
 </body>
 </html>

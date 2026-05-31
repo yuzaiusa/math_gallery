@@ -44,6 +44,7 @@ jobs:
           cp -r pages/lorenz _site/pages/lorenz
           cp -r pages/films _site/pages/films
           cp -r pages/equations _site/pages/equations
+          cp -r pages/perturbation _site/pages/perturbation
           mkdir -p _site/movies
           cp movies/points.json _site/movies/points.json
           cp build/wasm/core.js build/wasm/core.wasm _site/pages/mandelbrot/wasm/

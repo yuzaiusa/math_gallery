@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep-Zoom Rendering: Perturbation Theory - Math Gallery</title>
+  <meta name="description" content="How the viewer renders extremely deep Mandelbrot/Julia zooms with perturbation theory.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,360;0,9..144,380;1,9..144,340&family=Newsreader:ital,opsz,wght@0,6..72,360;0,6..72,420;1,6..72,360&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="../../assets/site.css">
+  <link rel="stylesheet" href="../../assets/article.css">
+</head>
+<body class="topic fractals">
+  <div class="shell">
+    <a class="back" href="../../index.html"><span class="arrow">&larr;</span> Math Gallery</a>
+    <article class="article">
+      <p class="eyebrow">Collection I - Fractals · Deep zoom</p>
+      <h1 id="deep-zoom-rendering-perturbation-theory">Deep-Zoom Rendering: Perturbation Theory</h1>
+      <p>This document explains how the fractal viewer renders extremely deep zooms, the
+      math behind it, and why it replaces the original double‑double / quad‑double
+      ("DD/QD") approach for deep views.</p>
+      <p>It covers Mandelbrot, Julia, and Multibrot — the families that currently use the
+      perturbation path. Tricorn and Burning Ship still use the direct DD/QD kernels
+      (their <code>conj</code>/<code>abs</code> maps make perturbation considerably harder).</p>
+      <hr />
+      <h2 id="1-background-the-direct-ddqd-renderer-and-where-it-breaks">1. Background: the direct DD/QD renderer and where it breaks</h2>
+      <p>The original renderer (still used for shallow views and for Tricorn/Burning Ship)
+      iterates <strong>every pixel independently</strong>. For the Mandelbrot map <code>z ← z² + c</code> it
+      computes, per pixel,</p>
+      <pre><code>z₀ = 0,   z_{n+1} = z_n² + c
+      </code></pre>
+      <p>until <code>|z_n| &gt; 2</code> (escaped) or <code>n</code> reaches <code>maxIter</code> (assumed in‑set). To stay
+      accurate as you zoom in, it escalates the arithmetic precision of the <code>z</code>
+      iteration: native <code>double</code> (f64), then <strong>double‑double</strong> (~32 digits), then
+      <strong>quad‑double</strong> (~64 digits). Those are implemented in
+      <a href="https://github.com/yuzaiusa/math_gallery/blob/main/core/include/mg/real_dd.hpp"><code>core/include/mg/real_dd.hpp</code></a> and
+      <a href="https://github.com/yuzaiusa/math_gallery/blob/main/core/include/mg/real_qd.hpp"><code>real_qd.hpp</code></a> using error‑free transforms
+      (<code>two_sum</code>, <code>two_product</code>) ported from the original JS viewer; the kernels live
+      in <a href="https://github.com/yuzaiusa/math_gallery/blob/main/core/include/mg/render.hpp"><code>core/include/mg/render.hpp</code></a>.</p>
+      <p>This approach has <strong>two independent limits</strong>:</p>
+      <ol>
+      <li>
+      <p><strong>Speed.</strong> Every pixel pays the high‑precision cost. A quad‑double multiply is
+         tens of floating‑point operations, so a frame of millions of pixels at QD
+         precision is very slow — impractical for an interactive viewer or for
+         rendering movie frames.</p>
+      </li>
+      <li>
+      <p><strong>A hard coordinate wall around zoom ≈ 1e14.</strong> This is the subtle one. The
+         per‑pixel coordinate is computed in <code>double</code>:</p>
+      </li>
+      </ol>
+      <p><code>c_re = reMin + (px + 0.5)/width · reRange</code></p>
+      <p><code>reMin</code> is an order‑1 number (e.g. <code>-0.743643887…</code>), while at zoom <code>Z</code> the
+         per‑pixel step is <code>reRange/width = 3.5 / (Z·width)</code>. Adjacent pixels are only
+         distinguishable if that step exceeds the spacing of representable doubles near
+         <code>reMin</code>, which is <code>ulp(reMin) ≈ 2.2e-16</code>. Setting</p>
+      <p><code>3.5 / (Z·width) &gt; 2.2e-16   ⟹   Z &lt; ~1e13–1e14   (for width ~10³)</code></p>
+      <p>Beyond that, <strong>every pixel rounds to the same <code>c</code></strong> and the image collapses —
+         <em>regardless of how precise the <code>z</code> iteration is</em>. Raising the iteration to
+         DD/QD does not help, because the input coordinate is already degenerate in
+         f64. (This is why deep zooms in the stage‑1 viewer "struggled" near 1e14.)</p>
+      <p>Perturbation theory fixes <strong>both</strong> limits at once.</p>
+      <hr />
+      <h2 id="2-the-key-idea">2. The key idea</h2>
+      <p>Instead of iterating each pixel's coordinate in high precision, we iterate <strong>one</strong>
+      high‑precision <strong>reference orbit</strong> from the view center <code>C</code>, and express every
+      other pixel as a <strong>small perturbation</strong> off it, iterated in fast <code>double</code>:</p>
+      <pre><code>reference (high precision, computed once):   X₀ = 0,   X_{n+1} = X_n² + C
+      pixel       (f64, computed per pixel):        z_n = X_n + e_n
+      </code></pre>
+      <p>The crucial quantity is the pixel's <strong>offset from the center</strong>, <code>δc = c − C</code>. At
+      zoom <code>Z</code>, <code>δc</code> ranges over <code>±reRange/2 ≈ ±1.75/Z</code>. As a <em>standalone</em> double this
+      is fine all the way down to ~1e‑300 — the precision problem in §1 only arose from
+      <em>adding</em> that tiny offset to the order‑1 <code>reMin</code>. Perturbation never does that
+      addition in low precision: it keeps <code>δc</code> separate and small, and only <code>C</code> (and
+      its orbit) needs high precision.</p>
+      <p>So the structure flips:</p>
+      <ul>
+      <li><strong>Reference orbit</strong> <code>X_n</code>: high precision to <em>compute</em> (we use QD), stored as
+        plain <code>double[]</code> — that is enough for the perturbation, see below.</li>
+      <li><strong>Per‑pixel iteration</strong>: entirely <code>double</code> → fast, and unbounded in zoom depth
+        because <code>δc</code> stays representable.</li>
+      </ul>
+      <hr />
+      <h2 id="3-the-perturbation-recurrence-mandelbrot">3. The perturbation recurrence (Mandelbrot)</h2>
+      <p>Subtract the reference recurrence from the pixel recurrence:</p>
+      <pre><code>e_{n+1} = z_{n+1} − X_{n+1}
+              = (z_n² + c) − (X_n² + C)
+              = (z_n² − X_n²) + (c − C)
+              = (z_n − X_n)(z_n + X_n) + δc
+              = e_n · (2X_n + e_n) + δc
+              = 2·X_n·e_n + e_n² + δc                      with   e₀ = 0
+      </code></pre>
+      <p>This identity is <strong>algebraically exact</strong> — it holds for any <code>e_n</code>, not just small
+      ones. What makes it <em>useful</em> is the floating‑point behavior:</p>
+      <ul>
+      <li><code>X_n</code> is stored as a <code>double</code>. In the term <code>2·X_n·e_n</code>, the relative error of
+        <code>X_n</code> (~1e‑16) is multiplied by the tiny <code>e_n</code>, contributing only ~<code>1e-16·|e_n|</code>
+        of absolute error — negligible.</li>
+      <li><code>δc</code> is a small, fully‑accurate <code>double</code>.</li>
+      <li><code>e_n</code> is small, so <code>2·X_n·e_n + e_n²</code> is computed cleanly in <code>double</code>.</li>
+      </ul>
+      <p>The escape test uses the reconstructed value <code>z_n = X_n + e_n</code> and the standard
+      bailout <code>|z_n| &gt; 2</code>. The smooth (fractional) iteration count is unchanged from the
+      direct renderer:</p>
+      <pre><code>μ = n + 1 − log₂( ½·log|z_n|² )
+      </code></pre>
+      <p>so coloring is identical and continuous with the direct path.</p>
+      <hr />
+      <h2 id="4-glitches-rebasing-and-the-qd-fallback">4. Glitches, rebasing, and the QD fallback</h2>
+      <p>The one place <code>double</code> precision genuinely fails is when the reconstructed
+      <code>z_n = X_n + e_n</code> is <strong>much smaller than <code>X_n</code></strong> — then forming <code>X_n + e_n</code> is a
+      catastrophic cancellation and <code>e_n</code> loses its meaning. This is a <strong>glitch</strong>
+      (Pauldelbrot's criterion: <code>|z_n|² &lt; ε·|X_n|²</code>, with <code>ε = 1e-6</code> in the code).</p>
+      <p>We handle glitches two ways, depending on the fractal:</p>
+      <h3 id="rebasing--mandelbrot-and-multibrot">Rebasing — Mandelbrot and Multibrot</h3>
+      <p>Their reference starts at <code>X₀ = 0</code>. Zhuoran's <strong>rebasing</strong> observes that when the
+      orbit passes near zero we can simply <em>re‑reference to the start</em>: set the
+      perturbation to the current value and restart the reference index.</p>
+      <pre><code>if  |z_n|² &lt; |e_n|²   or   the reference is exhausted:
+             e ← z_n ;   m ← 0          (m is the local reference index)
+      </code></pre>
+      <p>Because <code>X₀ = 0</code>, after rebasing <code>z_n = X₀ + e = e</code> is consistent, and the next
+      step <code>e' = 2·X₀·e + e² + δc = e² + δc</code> continues correctly. Rebasing keeps the
+      whole computation in fast <code>double</code> and resolves the vast majority of glitches.</p>
+      <h3 id="exact-qd-fallback--julia-and-a-safety-net">Exact QD fallback — Julia (and a safety net)</h3>
+      <p>Julia's reference orbit starts at the <strong>seed</strong> (the view center in the z‑plane),
+      not at 0, so rebasing‑to‑zero doesn't apply. Instead, a glitched Julia pixel is
+      <strong>recomputed exactly</strong> at its full high‑precision coordinate using a QD direct
+      iteration (<a href="https://github.com/yuzaiusa/math_gallery/blob/main/core/include/mg/perturb.hpp"><code>iterate_qd_coord</code></a>). This is slow
+      per pixel, but glitches are rare when zooming into the set's interior, so only a
+      small fraction of pixels take this path. The same fallback also acts as a safety
+      net for Mandelbrot/Multibrot pixels that a rebase cannot rescue.</p>
+      <hr />
+      <h2 id="5-the-fractal-family">5. The fractal family</h2>
+      <p>Only the per‑iteration step differs; the reference‑orbit + perturbation +
+      glitch‑handling scaffolding is shared.</p>
+      <table>
+      <thead>
+      <tr>
+      <th>Family</th>
+      <th>Map</th>
+      <th>Reference start</th>
+      <th>Perturbation step <code>e_{n+1}</code></th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td><strong>Mandelbrot</strong></td>
+      <td><code>z² + c</code></td>
+      <td><code>X₀ = 0</code>, ref <code>c = C</code></td>
+      <td><code>2·X·e + e² + δc</code></td>
+      </tr>
+      <tr>
+      <td><strong>Multibrot</strong> (deg <code>d</code>)</td>
+      <td><code>zᵈ + c</code></td>
+      <td><code>X₀ = 0</code>, ref <code>c = C</code></td>
+      <td><code>Σ_{k=1..d} C(d,k)·X^{d−k}·eᵏ + δc</code></td>
+      </tr>
+      <tr>
+      <td><strong>Julia</strong></td>
+      <td><code>z² + k</code></td>
+      <td><code>X₀ = seed = C</code>, ref <code>c = k</code></td>
+      <td><code>2·X·e + e²</code> (e₀ = pixel offset, <code>δc = 0</code>)</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>Notes:</p>
+      <ul>
+      <li><strong>Multibrot</strong> evaluates <code>(X+e)ᵈ − Xᵈ</code> via its <strong>binomial expansion</strong>
+        <code>d·X^{d−1}·e + … + eᵈ</code>, <em>not</em> by computing the two powers <code>(X+e)ᵈ</code> and <code>Xᵈ</code>
+        separately and subtracting (which would reintroduce catastrophic cancellation
+        for small <code>e</code>). The expansion has no cancellation. Integer degrees only (no
+        transcendental powers).</li>
+      <li><strong>Julia</strong>'s deep‑zoom variable is the <em>initial point</em> <code>z₀ = pixel</code>, so the
+        perturbation seed is <code>e₀ = pixel − seed = δ</code> and there is no <code>+δc</code> term (the
+        constant <code>k</code> cancels between reference and pixel).</li>
+      </ul>
+      <hr />
+      <h2 id="6-why-the-coordinate-wall-is-gone">6. Why the coordinate wall is gone</h2>
+      <p>The reference orbit must be accurate to <code>≈ −log₁₀(reRange)</code> digits — i.e. enough
+      to resolve the view. We compute it in <strong>quad‑double (~64 digits)</strong>, which keeps
+      the center accurate to roughly <strong>zoom ≈ 1e50</strong> before the reference itself loses
+      resolution. (Double‑double would reach ~1e26; QD is used so the headroom is
+      large.) The per‑pixel <code>double</code> perturbation adds no further limit because <code>δc</code>
+      stays representable far beyond that.</p>
+      <p>In short, the wall moved from <strong>~1e14 (f64 coordinate)</strong> to <strong>~1e50 (QD
+      reference)</strong>, and the per‑pixel cost dropped from <strong>DD/QD to f64</strong>.</p>
+      <hr />
+      <h2 id="7-when-each-path-is-used">7. When each path is used</h2>
+      <table>
+      <thead>
+      <tr>
+      <th>View</th>
+      <th>Path</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Shallow zoom (≲ 1e10), any fractal</td>
+      <td>Direct f64 kernel (<code>render.hpp</code>) — simplest, fastest</td>
+      </tr>
+      <tr>
+      <td>Tricorn / Burning Ship, any zoom</td>
+      <td>Direct f64 → DD → QD by depth (<code>render.hpp</code>)</td>
+      </tr>
+      <tr>
+      <td>Mandelbrot / Julia / Multibrot, deep zoom</td>
+      <td><strong>Perturbation</strong> (<code>perturb.hpp</code>)</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>The perturbation recurrence is exact at all zooms, but at shallow zoom <code>δc</code> is
+      large and rebasing/fallback triggers constantly with no speed benefit, so the
+      direct kernel is preferred there.</p>
+      <hr />
+      <h2 id="8-implementation-map">8. Implementation map</h2>
+      <ul>
+      <li><strong><code>core/include/mg/perturb.hpp</code></strong> — the whole perturbation core:</li>
+      <li><code>compute_reference&lt;FRAC&gt;()</code> — iterates the center in QD, stores <code>X_n</code> as
+          <code>double[]</code>.</li>
+      <li><code>perturb_pixel&lt;FRAC&gt;()</code> — one pixel: f64 perturbation loop with rebasing
+          (Mandelbrot/Multibrot) or glitch→QD fallback (Julia / safety net).</li>
+      <li><code>perturb_power_step()</code> — binomial <code>(X+e)ᵈ − Xᵈ</code> for Multibrot.</li>
+      <li><code>iterate_qd_coord&lt;FRAC&gt;()</code> — exact QD recompute used by the fallback.</li>
+      <li><code>render_band_perturb_raw()</code> / <code>_dispatch()</code> — render rows <code>[y0, y1)</code>.</li>
+      <li><strong><code>core/src/wasm_api.cpp</code></strong> — <code>mg_perturb_reference</code> (compute the reference once)
+        and <code>mg_render_band_perturb</code> (render a strip). A browser worker computes the
+        reference once per frame, then renders its strips.</li>
+      <li><strong><code>core/bindings/py_module.cpp</code></strong> — <code>render_frame_perturb(...)</code> for the Python
+        movie CLI (computes the reference and renders the whole frame in one call).</li>
+      <li>The center is passed across both boundaries as two <strong>QD values</strong> (4 <code>double</code>s
+        each); <code>re_span</code>/<code>im_span</code> are ordinary <code>double</code>s.</li>
+      </ul>
+      <p><strong>Data flow per frame:</strong> high‑precision center → <code>compute_reference</code> (QD, once) →
+      <code>double[]</code> reference orbit → per‑pixel f64 perturbation (with occasional QD
+      fallback) → smooth‑escape buffer → color map.</p>
+      <blockquote>
+      <p>Build note: the core must be compiled with <code>-ffp-contract=off</code> and without
+      <code>-ffast-math</code>. The QD reference and the error‑free transforms depend on strict
+      IEEE‑754 rounding; FMA contraction silently breaks them.</p>
+      </blockquote>
+      <hr />
+      <h2 id="9-validation">9. Validation</h2>
+      <p>The perturbation output is checked against <strong>arbitrary‑precision <code>mpmath</code></strong> ground
+      truth: it agrees for Mandelbrot, Julia, and Multibrot at zoom 1e6, and for
+      Mandelbrot at <strong>1e20 and 1e30</strong> on generic boundary points — classification exact,
+      smooth values matching to ~<code>5e-8</code> relative error. The WebAssembly build is
+      <strong>bit‑identical</strong> to the native module at every tested depth, so the browser
+      viewer and the Python CLI compute the same image.</p>
+      <hr />
+      <h2 id="10-limitations-and-future-work">10. Limitations and future work</h2>
+      <ul>
+      <li><strong>Periodic / Misiurewicz reference points.</strong> If the view center lands <em>exactly</em>
+        on a periodic point (e.g. <code>c = i</code>), the reference orbit is an exactly‑periodic
+        repelling cycle — a degenerate reference that amplifies f64 round‑off in <code>e</code>,
+        causing a small smooth‑value drift (classification stays correct). This is a
+        measure‑zero edge case for real navigation and is what series approximation /
+        multi‑reference glitch correction would fix.</li>
+      <li><strong>Series approximation (deferred).</strong> A truncated power series in <code>δc</code> can skip
+        the first thousands of iterations for <em>all</em> pixels at extreme zoom, a large
+        speedup. It also tightens the periodic‑point case. Intentionally left out of
+        this stage to keep the base correct and simple.</li>
+      <li><strong>Tricorn / Burning Ship.</strong> Not yet on the perturbation path; their <code>conj</code>/<code>abs</code>
+        maps need a different (and trickier) perturbation formulation and glitch test.</li>
+      </ul>
+    </article>
+    <footer class="colophon">
+      <span>The renderer behind the deep-dive films.</span>
+      <span><a href="../../index.html">&larr; back to the gallery</a></span>
+    </footer>
+  </div>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!window.renderMathInElement) return;
+      renderMathInElement(document.querySelector(".article"), {
+        delimiters: [
+          { left: "\\[", right: "\\]", display: true },
+          { left: "\\(", right: "\\)", display: false },
+        ],
+        throwOnError: false,
+      });
+    });
+  </script>
+</body>
+</html>

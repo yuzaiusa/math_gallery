@@ -1,0 +1,159 @@
+/* ===========================================================================
+   Article / long-form reading styles for generated doc pages (math notes).
+   Layered on top of site.css; uses its tokens. Editorial, ink-on-paper.
+   =========================================================================== */
+
+.article {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 4px 0 40px;
+}
+
+/* --- headings --------------------------------------------------------------*/
+.article h1 {
+  font-family: var(--display);
+  font-weight: 340;
+  font-size: clamp(38px, 6vw, 64px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 6px 0 8px;
+}
+.article h2 {
+  font-family: var(--display);
+  font-weight: 360;
+  font-size: clamp(26px, 3.4vw, 34px);
+  letter-spacing: -0.015em;
+  margin: 56px 0 14px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.article h3 {
+  font-family: var(--display);
+  font-weight: 380;
+  font-size: clamp(19px, 2.4vw, 23px);
+  letter-spacing: -0.01em;
+  margin: 34px 0 10px;
+  color: var(--fg);
+}
+.article h2 .headerlink, .article h3 .headerlink { display: none; }
+
+/* --- body text -------------------------------------------------------------*/
+.article p, .article li {
+  font-family: var(--body);
+  font-size: 18.5px;
+  line-height: 1.7;
+  color: var(--fg-soft);
+}
+.article strong { color: var(--fg); font-weight: 600; }
+.article em { font-style: italic; }
+.article a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2.5px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.article a:hover { text-decoration-color: var(--accent); }
+
+.article ul, .article ol { margin: 14px 0 18px; padding-left: 1.3em; }
+.article li { margin: 7px 0; }
+.article li::marker { color: var(--accent); }
+
+/* lead blockquote / callout */
+.article blockquote {
+  margin: 22px 0;
+  padding: 4px 0 4px 22px;
+  border-left: 2px solid var(--accent);
+  color: var(--fg);
+}
+.article blockquote p { color: var(--fg); font-size: 19.5px; }
+.article blockquote strong { color: var(--accent); }
+
+/* --- the table of contents (first list after "Contents") -------------------*/
+.article h2 + p strong { }    /* "Contents" label sits in a <p> */
+
+/* --- inline + block code ---------------------------------------------------*/
+.article code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--fg);
+}
+.article pre {
+  margin: 20px 0;
+  padding: 16px 18px;
+  background: #07080c;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.article pre code {
+  background: none; border: 0; padding: 0;
+  font-size: 13.5px; line-height: 1.55; color: var(--fg-soft);
+}
+
+/* --- tables ----------------------------------------------------------------*/
+.article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 22px 0;
+  font-family: var(--body);
+  font-size: 16.5px;
+}
+.article th, .article td {
+  text-align: left;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.article thead th {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-bottom: 1px solid var(--line-2);
+}
+.article tbody tr:hover td { background: rgba(255,255,255,0.015); }
+
+/* --- figures ---------------------------------------------------------------*/
+.article figure { margin: 30px 0; }
+.article figure img, .article p > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: #05060a;
+}
+.article figcaption {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* --- math ------------------------------------------------------------------*/
+.article .katex { font-size: 1.05em; }
+.article .katex-display {
+  margin: 20px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+.article hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 40px 0;
+}
+
+@media (max-width: 700px) {
+  .article p, .article li { font-size: 17.5px; }
+}
