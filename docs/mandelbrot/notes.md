@@ -66,9 +66,12 @@ The landmarks worth knowing:
 - **Main cardioid** — the big heart-shaped body. These are the $c$ for which
   $f_c$ has an *attracting fixed point*. Its boundary is the curve
   $c(\varphi) = \tfrac{1}{2}e^{i\varphi} - \tfrac{1}{4}e^{2i\varphi}$, with the
-  **cusp** at $c = \tfrac14$.
+  **cusp** at $c = \tfrac14$ — see
+  [*Attracting fixed points and the main cardioid*](#attracting-fixed-points-and-the-main-cardioid)
+  for the details.
 - **Period-2 bulb** — the disk of radius $\tfrac14$ centered at $c=-1$. Here the
-  attracting orbit is a 2-cycle.
+  attracting orbit is a 2-cycle — see [*The period-2 bulb, exactly*](#the-period-2-bulb-exactly)
+  for the details.
 - **Bulbs / decorations** — every bump on the cardioid is a *hyperbolic
   component* with its own attracting cycle; they are indexed by a rotation number
   $p/q$ (§3).
@@ -80,12 +83,6 @@ The landmarks worth knowing:
   most photogenic neighborhoods.
 - **Mini-Mandelbrots (satellites)** — tiny near-perfect copies of the whole set,
   scattered along the filaments (§7).
-
-Two of these landmarks are more than scenery: the **main cardioid** and the
-**period-2 bulb** are the first two regions whose dynamics we can pin down with a
-formula. Their equations are derived in §3 — see
-[*Attracting fixed points and the main cardioid*](#attracting-fixed-points-and-the-main-cardioid)
-and [*The period-2 bulb, exactly*](#the-period-2-bulb-exactly).
 
 ---
 
@@ -520,7 +517,7 @@ faster than per-pixel high precision.
 
 The full derivation — including the escape test in perturbed coordinates, glitch
 detection and reference **rebasing**, and the (deferred) **series approximation** —
-is written up separately in **[`../perturbation.md`](../perturbation.md)**.
+is written up separately in **[Deep-Zoom Rendering: Perturbation Theory](../perturbation.md)**.
 
 ---
 
