@@ -81,6 +81,12 @@ The landmarks worth knowing:
 - **Mini-Mandelbrots (satellites)** — tiny near-perfect copies of the whole set,
   scattered along the filaments (§7).
 
+Two of these landmarks are more than scenery: the **main cardioid** and the
+**period-2 bulb** are the first two regions whose dynamics we can pin down with a
+formula. Their equations are derived in §3 — see
+[*Attracting fixed points and the main cardioid*](#attracting-fixed-points-and-the-main-cardioid)
+and [*The period-2 bulb, exactly*](#the-period-2-bulb-exactly).
+
 ---
 
 ## 3. The dynamics: squaring, escape, and periodicity
