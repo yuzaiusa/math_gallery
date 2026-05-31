@@ -191,7 +191,9 @@
     fetch("../../movies/points.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then((data) => {
-        const films = (Array.isArray(data) ? data : data.films || []).filter((f) => f && f.name);
+        const films = (Array.isArray(data) ? data : data.films || [])
+          .filter((f) => f && f.name)
+          .sort((a, b) => (a.id ?? 1e9) - (b.id ?? 1e9));   // display in id order
         const root = document.getElementById("films");
         root.innerHTML = "";
         if (!films.length) { root.innerHTML = '<p class="empty">No films yet.</p>'; return; }
