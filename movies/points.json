@@ -118,5 +118,20 @@
     "preview_end_second": 159,
     "text": "Out along the real antenna to its very tip at c = −2, where the set narrows to an infinitely thin filament — yet however far you push in, the boundary never falls quiet, unfurling one more tiny Mandelbrot at the end of the needle.",
     "url": "https://youtu.be/88_uMsFnYgY"
+  },
+  {
+    "id": 9,
+    "name": "Search for the smaller ones",
+    "fractal": "mandelbrot",
+    "re": "-1.453764812332460772051018859196253857",
+    "im": "-0.000000016219067554983851906240580386",
+    "zoom": 9e31,
+    "maxiter": 40960,
+    "cycles": 2.7,
+    "file": "search_for_smaller_ones.mp4",
+    "preview_start_second": 155,
+    "preview_end_second": 160,
+    "text": "A near-vertical plunge along the real antenna at c ≈ −1.4538, hunting the mini-Mandelbrots that hide ever deeper and ever smaller — each one a perfect copy of the whole, waiting at a scale the eye would never have guessed held anything at all.",
+    "url": "https://youtu.be/S_t4VXEF2_w"
   }
 ]
